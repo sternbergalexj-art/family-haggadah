@@ -19,6 +19,9 @@ export function subscribeToSubmissions(callback) {
   return onSnapshot(q, (snapshot) => {
     const subs = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
     callback(subs);
+  }, (error) => {
+    console.error("Firestore subscription error:", error);
+    callback([]);
   });
 }
 
