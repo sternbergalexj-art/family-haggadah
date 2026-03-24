@@ -548,6 +548,9 @@ export default function App() {
           <div className="fade-up" style={{ textAlign: "center", paddingTop: 40 }}>
             <div style={{ fontSize: 13, letterSpacing: "0.3em", textTransform: "uppercase", color: "#8B6914", fontFamily: "'Crimson Pro', serif", fontWeight: 500, marginBottom: 16 }}>Passover {year}</div>
             <h1 style={{ fontSize: "clamp(36px, 6vw, 52px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 12 }}>Family Haggadah</h1>
+            <div style={{ display: "flex", justifyContent: "center", gap: 16, marginBottom: 40, flexWrap: "wrap" }}>
+              {HAGGADOT.map(h => <span key={h.id} style={{ fontSize: 14, color: "#6B5A3E", fontFamily: "'Crimson Pro', serif", fontStyle: "italic", fontWeight: 300 }}>{h.name}</span>)}
+            </div>
             <div style={{ width: 120, height: 1, margin: "0 auto 40px", background: "linear-gradient(90deg, transparent, #C4943D, transparent)" }} />
             <p style={{ fontSize: 17, lineHeight: 1.7, color: "#5A4E3A", maxWidth: 520, margin: "0 auto 48px", fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}>
               A collection of divrei Torah and insights from our families, woven together to enrich our Seder tables. Each voice adds meaning to our shared story of freedom.
