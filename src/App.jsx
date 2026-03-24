@@ -555,14 +555,7 @@ export default function App() {
             <p style={{ fontSize: 17, lineHeight: 1.7, color: "#5A4E3A", maxWidth: 520, margin: "0 auto 48px", fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}>
               A collection of divrei Torah and insights from our families, woven together to enrich our Seder tables. Each voice adds meaning to our shared story of freedom.
             </p>
-            <div className="sr" style={{ display: "flex", justifyContent: "center", gap: 48, marginBottom: 48 }}>
-              {[[allSubmissions.length,"Total Submissions"],[TOTAL_SECTIONS,"Sections"]].map(([v,l],i) => (
-                <div key={i} style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 32, fontWeight: 300, color: "#8B6914" }}>{v}</div>
-                  <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#9B8E78", fontFamily: "'Crimson Pro', serif" }}>{l}</div>
-                </div>
-              ))}
-            </div>
+            <div style={{ marginBottom: 48 }} />
             <button onClick={() => { setSelectedSection(null); setSelectedHaggadot([]); setRichContent(""); setUploadedFile(null); setUploadedContent(""); setView("submit"); }}
               style={{ padding: "14px 44px", borderRadius: 28, background: "#2C2416", color: "#FAF6F0", border: "none", fontSize: 15, fontFamily: "'Crimson Pro', serif", fontWeight: 500, letterSpacing: "0.08em", cursor: "pointer", boxShadow: "0 4px 20px rgba(44,36,22,0.2)" }}>
               Add Your Dvar Torah
