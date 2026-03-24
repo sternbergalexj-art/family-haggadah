@@ -616,21 +616,19 @@ export default function App() {
                       <div style={{ fontSize: 12, letterSpacing: "0.25em", textTransform: "uppercase", color: "#8B6914", fontFamily: "'Crimson Pro', serif", marginBottom: 8 }}>Step 2</div>
                       <h2 style={{ fontSize: 28, fontWeight: 400 }}>Choose a Section</h2>
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 12 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
                       {SECTIONS.map(s => {
                         const c = allSubmissions.filter(x => x.section === s.num).length;
                         return (
                           <div key={s.num} className="sc" onClick={() => setSelectedSection(s.num)}
-                            style={{ padding: "18px 20px", borderRadius: 12, background: "#FFFCF7", border: "1px solid rgba(139,105,20,0.1)", display: "flex", alignItems: "center", gap: 14, boxShadow: "0 2px 8px rgba(139,105,20,0.04)" }}>
-                            <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg, #FAF1DD, #F0E4C8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{s.icon}</div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-                                <span style={{ fontSize: 16, fontWeight: 600 }}>{s.en}</span>
-                                <span style={{ fontSize: 15, color: "#8B6914", fontFamily: "'Frank Ruhl Libre', serif", direction: "rtl" }}>{s.he}</span>
-                              </div>
-                              <div style={{ fontSize: 12, color: "#9B8E78", marginTop: 2, fontFamily: "'Crimson Pro', serif", fontWeight: 300, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.desc}</div>
+                            style={{ padding: "14px 14px", borderRadius: 12, background: "#FFFCF7", border: "1px solid rgba(139,105,20,0.1)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 8, boxShadow: "0 2px 8px rgba(139,105,20,0.04)" }}>
+                            <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg, #FAF1DD, #F0E4C8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{s.icon}</div>
+                            <div>
+                              <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.3 }}>{s.en}</div>
+                              <div style={{ fontSize: 13, color: "#8B6914", fontFamily: "'Frank Ruhl Libre', serif", direction: "rtl", marginTop: 2 }}>{s.he}</div>
+                              <div style={{ fontSize: 11, color: "#9B8E78", marginTop: 3, fontFamily: "'Crimson Pro', serif", fontWeight: 300, lineHeight: 1.3 }}>{s.desc}</div>
                             </div>
-                            {c > 0 && <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#8B6914", color: "#fff", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 600, flexShrink: 0 }}>{c}</div>}
+                            {c > 0 && <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#8B6914", color: "#fff", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 600 }}>{c}</div>}
                           </div>
                         );
                       })}
