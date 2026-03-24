@@ -403,27 +403,36 @@ export default function App() {
     setSubmitting(true); setSubmitError(null);
     try {
       // Save submission immediately (no waiting for file upload)
+      const savedFileName = uploadedFile?.name || null;
+      // Capture file data NOW before state gets cleared
+      let fileBlob = null;
+      if (uploadedFile && inputMode === "upload") {
+        fileBlob = new Blob([await uploadedFile.arrayBuffer()], { type: uploadedFile.type });
+      }
+
       const docRef = await addSubmission({
         section: selectedSection, author: authorName, title: title.trim(),
         content, date: new Date().toLocaleDateString(),
         haggadot: selectedHaggadot,
         order: allSubmissions.filter(s => s.section === selectedSection).length,
-        fileName: uploadedFile?.name || null,
+        fileName: savedFileName,
         fileUrl: null,
       });
       setSubmitSuccess(true);
 
       // Upload original file in background (non-blocking)
-      if (uploadedFile && inputMode === "upload") {
-        const fileCopy = uploadedFile;
+      if (fileBlob && savedFileName) {
         const docId = docRef.id;
+        // Sanitize filename - remove non-ASCII characters for storage path
+        const safeName = savedFileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const path = `uploads/${Date.now()}_${safeName}`;
         (async () => {
           try {
-            const path = `uploads/${Date.now()}_${fileCopy.name}`;
-            const url = await uploadFile(fileCopy, path);
+            const url = await uploadFile(fileBlob, path);
             await updateSubmission(docId, { fileUrl: url });
+            console.log("File uploaded successfully:", url);
           } catch (e) {
-            console.error("Background file upload failed:", e);
+            console.error("Background file upload failed:", e.message, e);
           }
         })();
       }
