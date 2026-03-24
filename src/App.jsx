@@ -5,6 +5,7 @@ import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import ImageExt from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
+import * as mammoth from "mammoth/mammoth.browser.js";
 import {
   subscribeToSubmissions, addSubmission, removeSubmission,
   updateSubmission, updateSubmissionOrder, uploadFile,
@@ -116,7 +117,7 @@ function RichEditor({ content, onChange, placeholder: ph }) {
 
   return (
     <div style={{ border: "1px solid rgba(139,105,20,0.18)", borderRadius: 12, background: "#FFFCF7", overflow: "hidden" }}>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 2, padding: "8px 10px", borderBottom: "1px solid rgba(139,105,20,0.1)", background: "rgba(139,105,20,0.02)", alignItems: "center" }}>
+      <div style={{ display: "flex", flexWrap: "nowrap", gap: 2, padding: "8px 10px", borderBottom: "1px solid rgba(139,105,20,0.1)", background: "rgba(139,105,20,0.02)", alignItems: "center", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
         <B onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")} title="Bold">B</B>
         <B onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")} title="Italic"><em>I</em></B>
         <B onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive("underline")} title="Underline"><u>U</u></B>
@@ -309,10 +310,12 @@ async function parsePDF(file) {
 }
 
 async function parseDOCX(file) {
-  // Use mammoth from npm (bundled with the app)
-  const mammoth = await import("mammoth/mammoth.browser.js");
   const buf = await file.arrayBuffer();
-  const result = await mammoth.convertToHtml({ arrayBuffer: buf });
+  // Add timeout to prevent infinite hang
+  const result = await Promise.race([
+    mammoth.convertToHtml({ arrayBuffer: buf }),
+    new Promise((_, reject) => setTimeout(() => reject(new Error("Parsing timed out after 30s")), 30000))
+  ]);
   return result.value;
 }
 
@@ -373,12 +376,22 @@ export default function App() {
     const file = e.target.files[0];
     if (!file) return;
     setUploadedFile(file);
+    setUploadedContent("");
     setParsing(true);
-    try { setUploadedContent(await parseFile(file)); }
-    catch (err) {
-      console.error(err);
-      try { const t = await file.text(); setUploadedContent(`<p>${t.replace(/\n/g, "<br>")}</p>`); }
-      catch { setUploadedContent("<p>[Could not parse file]</p>"); }
+    setSubmitError(null);
+    try {
+      const parsed = await parseFile(file);
+      setUploadedContent(parsed);
+    } catch (err) {
+      console.error("File parse error:", err);
+      setSubmitError("File parsing issue: " + err.message + ". Trying plain text fallback...");
+      try {
+        const t = await file.text();
+        setUploadedContent(`<p>${t.replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>")}</p>`);
+        setSubmitError(null);
+      } catch {
+        setUploadedContent("<p>[Could not parse file — please try copy-pasting the content using the Write tab instead]</p>");
+      }
     }
     setParsing(false);
   }, []);
@@ -648,7 +661,7 @@ export default function App() {
                   {/* Haggadah selector */}
                   <div style={{ marginBottom: 20 }}>
                     <label style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#8B7D66", fontFamily: "'Crimson Pro', serif", marginBottom: 8, display: "block" }}>Which Haggadah? *</label>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "nowrap" }}>
                       {[...HAGGADOT, { id: "both", name: "Both" }].map(h => {
                         const isSel = h.id === "both" ? selectedHaggadot.length === 2 : selectedHaggadot.includes(h.id);
                         return (
@@ -656,12 +669,13 @@ export default function App() {
                             if (h.id === "both") setSelectedHaggadot(selectedHaggadot.length === 2 ? [] : HAGGADOT.map(x => x.id));
                             else toggleHaggadah(h.id);
                           }} style={{
-                            padding: "10px 22px", borderRadius: 10, border: "none", cursor: "pointer",
+                            padding: "8px 14px", borderRadius: 10, cursor: "pointer", flex: 1,
                             background: isSel ? "#2C2416" : "#FFFCF7",
                             color: isSel ? "#FAF6F0" : "#2C2416",
-                            fontSize: 14, fontFamily: "'Crimson Pro', serif", fontWeight: 500,
+                            fontSize: 13, fontFamily: "'Crimson Pro', serif", fontWeight: 500,
                             boxShadow: isSel ? "0 2px 12px rgba(44,36,22,0.15)" : "0 1px 4px rgba(139,105,20,0.08)",
                             border: isSel ? "1px solid #2C2416" : "1px solid rgba(139,105,20,0.15)",
+                            whiteSpace: "nowrap",
                           }}>{h.name}</button>
                         );
                       })}
