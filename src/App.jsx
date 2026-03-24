@@ -19,6 +19,11 @@ const SECTIONS = [
   { num: 15, en: "Nirtzah", he: "נִירְצָה", desc: "Acceptance — closing the Seder", icon: "✡️" },
 ];
 
+const HAGGADOT = [
+  { id: "ottensoser", name: "Ottensoser Family" },
+  { id: "siegel", name: "Siegel Family" },
+];
+
 const ADMIN_PASSWORD = "seder";
 
 // ─── File parsing ───
@@ -27,9 +32,7 @@ async function loadScript(src) {
   if (document.querySelector(`script[src="${src}"]`)) return;
   return new Promise((resolve, reject) => {
     const s = document.createElement("script");
-    s.src = src;
-    s.onload = resolve;
-    s.onerror = reject;
+    s.src = src; s.onload = resolve; s.onerror = reject;
     document.head.appendChild(s);
   });
 }
@@ -77,108 +80,73 @@ async function exportPDF(submissions, familyName, year) {
   const checkPage = (need) => { if (y + need > H - 72) { doc.addPage(); bg(); y = 72; } };
   const bg = () => { doc.setFillColor(250, 246, 240); doc.rect(0, 0, W, H, "F"); };
 
-  // ── Cover ──
   bg();
-  doc.setDrawColor(196, 148, 61);
-  doc.setLineWidth(1.5);
+  doc.setDrawColor(196, 148, 61); doc.setLineWidth(1.5);
   doc.rect(36, 36, W - 72, H - 72);
-  doc.setLineWidth(0.5);
-  doc.rect(42, 42, W - 84, H - 84);
+  doc.setLineWidth(0.5); doc.rect(42, 42, W - 84, H - 84);
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(14);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(14);
   doc.setTextColor(139, 105, 20);
   doc.text("Haggadah shel Pesach", W / 2, 220, { align: "center" });
 
-  doc.setDrawColor(196, 148, 61);
-  doc.setLineWidth(0.8);
-  doc.line(W / 2 - 60, 245, W / 2 + 60, 245);
+  doc.setLineWidth(0.8); doc.line(W / 2 - 60, 245, W / 2 + 60, 245);
 
-  doc.setFontSize(36);
-  doc.setTextColor(44, 36, 22);
+  doc.setFontSize(36); doc.setTextColor(44, 36, 22);
   doc.text(`The ${familyName}`, W / 2, 300, { align: "center" });
   doc.text("Haggadah", W / 2, 345, { align: "center" });
 
-  doc.setFontSize(16);
-  doc.setTextColor(139, 105, 20);
+  doc.setFontSize(16); doc.setTextColor(139, 105, 20);
   doc.text(`Passover ${year}`, W / 2, 395, { align: "center" });
   doc.line(W / 2 - 40, 420, W / 2 + 40, 420);
 
-  // ── Sections ──
   SECTIONS.forEach((sec) => {
     const subs = submissions
       .filter(s => s.section === sec.num)
       .sort((a, b) => (a.order ?? a.createdAt ?? 0) - (b.order ?? b.createdAt ?? 0));
 
-    doc.addPage();
-    bg();
-    y = 72;
+    doc.addPage(); bg(); y = 72;
 
-    doc.setFontSize(12);
-    doc.setTextColor(139, 105, 20);
+    doc.setFontSize(12); doc.setTextColor(139, 105, 20);
     doc.setFont("helvetica", "normal");
     doc.text(`${sec.num}.`, ML, y);
 
-    doc.setFontSize(22);
-    doc.setTextColor(44, 36, 22);
+    doc.setFontSize(22); doc.setTextColor(44, 36, 22);
     doc.text(sec.en, ML + 24, y);
 
-    doc.setFontSize(10);
-    doc.setTextColor(139, 126, 102);
-    y += 18;
-    doc.text(sec.desc, ML, y);
-    y += 10;
+    doc.setFontSize(10); doc.setTextColor(139, 126, 102);
+    y += 18; doc.text(sec.desc, ML, y); y += 10;
 
-    doc.setDrawColor(196, 148, 61);
-    doc.setLineWidth(0.5);
-    doc.line(ML, y, W - MR, y);
-    y += 24;
+    doc.setDrawColor(196, 148, 61); doc.setLineWidth(0.5);
+    doc.line(ML, y, W - MR, y); y += 24;
 
     if (subs.length === 0) {
-      doc.setFontSize(11);
-      doc.setTextColor(180, 170, 150);
+      doc.setFontSize(11); doc.setTextColor(180, 170, 150);
       doc.setFont("helvetica", "italic");
       doc.text("No submissions for this section.", ML + 16, y);
-      doc.setFont("helvetica", "normal");
-      return;
+      doc.setFont("helvetica", "normal"); return;
     }
 
     subs.forEach((sub, idx) => {
       checkPage(80);
-
       if (sub.title) {
-        doc.setFontSize(13);
-        doc.setTextColor(44, 36, 22);
+        doc.setFontSize(13); doc.setTextColor(44, 36, 22);
         doc.setFont("helvetica", "italic");
         doc.splitTextToSize(sub.title, CW - 32).forEach(line => {
-          checkPage(18);
-          doc.text(line, ML + 16, y);
-          y += 18;
-        });
-        y += 2;
+          checkPage(18); doc.text(line, ML + 16, y); y += 18;
+        }); y += 2;
       }
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(11);
       doc.setTextColor(61, 53, 37);
       doc.splitTextToSize(sub.content, CW - 32).forEach(line => {
-        checkPage(16);
-        doc.text(line, ML + 16, y);
-        y += 16;
+        checkPage(16); doc.text(line, ML + 16, y); y += 16;
       });
-
-      y += 4;
-      checkPage(20);
-      doc.setFontSize(10);
-      doc.setTextColor(139, 105, 20);
+      y += 4; checkPage(20);
+      doc.setFontSize(10); doc.setTextColor(139, 105, 20);
       doc.setFont("helvetica", "italic");
       doc.text(`— ${sub.author}`, ML + 16, y);
-      doc.setFont("helvetica", "normal");
-      y += 28;
-
+      doc.setFont("helvetica", "normal"); y += 28;
       if (idx < subs.length - 1) {
-        checkPage(20);
-        doc.setDrawColor(220, 210, 195);
+        checkPage(20); doc.setDrawColor(220, 210, 195);
         doc.setLineDashPattern([3, 3], 0);
         doc.line(ML + 16, y - 10, W - MR - 16, y - 10);
         doc.setLineDashPattern([], 0);
@@ -186,18 +154,13 @@ async function exportPDF(submissions, familyName, year) {
     });
   });
 
-  // ── Closing ──
-  doc.addPage();
-  bg();
-  doc.setDrawColor(196, 148, 61);
-  doc.setLineWidth(0.8);
+  doc.addPage(); bg();
+  doc.setDrawColor(196, 148, 61); doc.setLineWidth(0.8);
   doc.line(W / 2 - 60, H / 2 - 40, W / 2 + 60, H / 2 - 40);
-  doc.setFontSize(18);
-  doc.setTextColor(139, 105, 20);
+  doc.setFontSize(18); doc.setTextColor(139, 105, 20);
   doc.setFont("helvetica", "normal");
   doc.text("L'shanah haba'ah b'Yerushalayim", W / 2, H / 2, { align: "center" });
-  doc.setFontSize(13);
-  doc.setTextColor(107, 90, 62);
+  doc.setFontSize(13); doc.setTextColor(107, 90, 62);
   doc.setFont("helvetica", "italic");
   doc.text("Next year in Jerusalem", W / 2, H / 2 + 28, { align: "center" });
   doc.line(W / 2 - 60, H / 2 + 50, W / 2 + 60, H / 2 + 50);
@@ -206,14 +169,12 @@ async function exportPDF(submissions, familyName, year) {
 }
 
 // ═══════════════════════════════════════
-//  APP
-// ═══════════════════════════════════════
-
 export default function App() {
   const [view, setView] = useState("home");
   const [selectedSection, setSelectedSection] = useState(null);
-  const [submissions, setSubmissions] = useState([]);
+  const [allSubmissions, setAllSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [authorName, setAuthorName] = useState("");
   const [dvarTorah, setDvarTorah] = useState("");
   const [title, setTitle] = useState("");
@@ -222,19 +183,36 @@ export default function App() {
   const [inputMode, setInputMode] = useState("text");
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
   const [adminPassword, setAdminPassword] = useState("");
   const [adminAuthed, setAdminAuthed] = useState(false);
-  const [familyName] = useState("Our Family");
-  const [year] = useState("5786");
+  const [selectedHaggadot, setSelectedHaggadot] = useState([]);
+  const [adminFilter, setAdminFilter] = useState("all"); // "all", "ottensoser", "siegel"
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
   const [parsing, setParsing] = useState(false);
   const [exporting, setExporting] = useState(false);
   const fileInputRef = useRef(null);
+  const year = "5786";
+
+  // Filtered submissions based on admin view
+  const submissions = adminFilter === "all"
+    ? allSubmissions
+    : allSubmissions.filter(s => s.haggadot && (s.haggadot.includes(adminFilter)));
 
   useEffect(() => {
-    const unsub = subscribeToSubmissions(subs => { setSubmissions(subs); setLoading(false); });
+    const unsub = subscribeToSubmissions(subs => {
+      setAllSubmissions(subs);
+      setLoading(false);
+      setError(null);
+    });
     return () => unsub();
+  }, []);
+
+  const toggleHaggadah = useCallback((id) => {
+    setSelectedHaggadot(prev =>
+      prev.includes(id) ? prev.filter(h => h !== id) : [...prev, id]
+    );
   }, []);
 
   const handleFileUpload = useCallback(async (e) => {
@@ -254,24 +232,33 @@ export default function App() {
 
   const handleSubmit = useCallback(async () => {
     const content = inputMode === "text" ? dvarTorah : uploadedContent;
-    if (!authorName.trim() || !content.trim() || !selectedSection) return;
+    if (!authorName.trim() || !content.trim() || !selectedSection || selectedHaggadot.length === 0) return;
     setSubmitting(true);
+    setSubmitError(null);
     try {
       await addSubmission({
-        section: selectedSection, author: authorName.trim(), title: title.trim(),
-        content: content.trim(), date: new Date().toLocaleDateString(),
+        section: selectedSection,
+        author: authorName.trim(),
+        title: title.trim(),
+        content: content.trim(),
+        date: new Date().toLocaleDateString(),
         fileName: uploadedFile?.name || null,
-        order: submissions.filter(s => s.section === selectedSection).length,
+        haggadot: selectedHaggadot,
+        order: allSubmissions.filter(s => s.section === selectedSection).length,
       });
       setSubmitSuccess(true);
       setTimeout(() => {
         setSubmitSuccess(false); setSelectedSection(null);
         setDvarTorah(""); setTitle(""); setUploadedContent(""); setUploadedFile(null);
+        setSelectedHaggadot([]);
         setView("home");
       }, 2500);
-    } catch (err) { alert("Error — please try again."); console.error(err); }
+    } catch (err) {
+      console.error("Submit error:", err);
+      setSubmitError("Error submitting — please check your connection and try again. (" + err.message + ")");
+    }
     setSubmitting(false);
-  }, [inputMode, dvarTorah, uploadedContent, authorName, title, selectedSection, uploadedFile, submissions]);
+  }, [inputMode, dvarTorah, uploadedContent, authorName, title, selectedSection, uploadedFile, selectedHaggadot, allSubmissions]);
 
   const deleteSub = useCallback(async (id) => {
     if (!confirm("Delete this submission?")) return;
@@ -298,12 +285,14 @@ export default function App() {
     catch (e) { console.error(e); }
   }, [submissions]);
 
-  const doExport = useCallback(async () => {
+  const doExport = useCallback(async (familyId) => {
+    const fam = HAGGADOT.find(h => h.id === familyId);
+    const filtered = allSubmissions.filter(s => s.haggadot && s.haggadot.includes(familyId));
     setExporting(true);
-    try { await exportPDF(submissions, familyName, year); }
+    try { await exportPDF(filtered, fam.name, year); }
     catch (e) { alert("Export error"); console.error(e); }
     setExporting(false);
-  }, [submissions, familyName, year]);
+  }, [allSubmissions, year]);
 
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=Frank+Ruhl+Libre:wght@0,300;0,400;0,500;0,700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap');
@@ -315,9 +304,11 @@ export default function App() {
     @keyframes spin{to{transform:rotate(360deg)}}
     .fade-up{animation:fadeUp .5s ease forwards}
     .sc:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(139,105,20,0.12)!important}
-    .sc{transition:all .3s ease}
+    .sc{transition:all .3s ease;cursor:pointer}
     .nb:hover{background:rgba(44,36,22,0.06)!important}
     .ab:hover{background:rgba(139,105,20,0.1)!important}
+    .hag-chip{transition:all .2s ease;cursor:pointer;user-select:none}
+    .hag-chip:hover{transform:translateY(-1px)}
     textarea::-webkit-scrollbar{width:6px}
     textarea::-webkit-scrollbar-thumb{background:rgba(139,105,20,0.2);border-radius:3px}
     @media(max-width:600px){.g2{grid-template-columns:1fr!important}.sr{gap:24px!important}}
@@ -330,11 +321,18 @@ export default function App() {
     transition: "border-color 0.2s",
   };
 
+  const getHaggadahLabel = (sub) => {
+    if (!sub.haggadot || sub.haggadot.length === 0) return "";
+    if (sub.haggadot.length === 2) return "Both";
+    const h = HAGGADOT.find(x => x.id === sub.haggadot[0]);
+    return h ? h.name : "";
+  };
+
   if (loading) return (
     <div style={{ fontFamily: "'Cormorant Garamond', serif", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#FAF6F0" }}>
       <style>{css}</style>
       <div style={{ textAlign: "center", color: "#8B6914" }}>
-        <div style={{ fontSize: 32, marginBottom: 12 }}>✡️</div>
+        <div style={{ width: 32, height: 32, border: "3px solid rgba(139,105,20,0.2)", borderTopColor: "#8B6914", borderRadius: "50%", animation: "spin .8s linear infinite", margin: "0 auto 16px" }} />
         <div style={{ fontSize: 15, fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}>Loading Haggadah...</div>
       </div>
     </div>
@@ -345,14 +343,13 @@ export default function App() {
       <style>{css}</style>
       <div style={{ height: 4, background: "linear-gradient(90deg, transparent, #8B6914, #C4943D, #8B6914, transparent)" }} />
 
-      {/* NAV */}
       <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 28px", borderBottom: "1px solid rgba(139,105,20,0.12)", flexWrap: "wrap", gap: 8 }}>
         <div onClick={() => setView("home")} style={{ fontSize: 15, letterSpacing: "0.15em", textTransform: "uppercase", color: "#8B6914", fontWeight: 600, fontFamily: "'Crimson Pro', serif", cursor: "pointer" }}>
-          ✡ {familyName} Haggadah
+          ✡ Family Haggadah
         </div>
         <div style={{ display: "flex", gap: 6 }}>
           {[["home","Home"],["submit","Add Dvar Torah"],["admin","Admin"]].map(([v,l]) => (
-            <button key={v} className="nb" onClick={() => { if(v==="submit") setSelectedSection(null); setView(v); }}
+            <button key={v} className="nb" onClick={() => { if(v==="submit"){ setSelectedSection(null); setSelectedHaggadot([]); } setView(v); }}
               style={{ padding:"7px 16px", borderRadius:20, border:"none", cursor:"pointer", fontSize:13, fontFamily:"'Crimson Pro', serif", fontWeight:500, letterSpacing:"0.05em", transition:"all .25s",
                 background: (view===v||(v==="admin"&&view==="preview")) ? "#2C2416":"transparent",
                 color: (view===v||(v==="admin"&&view==="preview")) ? "#FAF6F0":"#6B5A3E" }}>{l}</button>
@@ -366,21 +363,28 @@ export default function App() {
         {view === "home" && (
           <div className="fade-up" style={{ textAlign: "center", paddingTop: 40 }}>
             <div style={{ fontSize: 13, letterSpacing: "0.3em", textTransform: "uppercase", color: "#8B6914", fontFamily: "'Crimson Pro', serif", fontWeight: 500, marginBottom: 16 }}>Passover {year}</div>
-            <h1 style={{ fontSize: "clamp(36px, 6vw, 56px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 8 }}>{familyName}</h1>
-            <h2 style={{ fontSize: "clamp(20px, 3.5vw, 30px)", fontWeight: 300, fontStyle: "italic", color: "#6B5A3E", marginBottom: 40 }}>Haggadah</h2>
+            <h1 style={{ fontSize: "clamp(36px, 6vw, 52px)", fontWeight: 300, lineHeight: 1.15, marginBottom: 12 }}>Family Haggadah</h1>
+            <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 40, flexWrap: "wrap" }}>
+              {HAGGADOT.map(h => (
+                <span key={h.id} style={{
+                  fontSize: 14, color: "#6B5A3E", fontFamily: "'Crimson Pro', serif",
+                  fontStyle: "italic", fontWeight: 300,
+                }}>{h.name}</span>
+              ))}
+            </div>
             <div style={{ width: 120, height: 1, margin: "0 auto 40px", background: "linear-gradient(90deg, transparent, #C4943D, transparent)" }} />
             <p style={{ fontSize: 17, lineHeight: 1.7, color: "#5A4E3A", maxWidth: 520, margin: "0 auto 48px", fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}>
-              A collection of divrei Torah and insights from our family, woven together to enrich our Seder table. Each voice adds meaning to our shared story of freedom.
+              A collection of divrei Torah and insights from our families, woven together to enrich our Seder tables. Each voice adds meaning to our shared story of freedom.
             </p>
             <div className="sr" style={{ display: "flex", justifyContent: "center", gap: 48, marginBottom: 48 }}>
-              {[[submissions.length,"Submissions"],[new Set(submissions.map(s=>s.section)).size,"Sections Filled"],[15-new Set(submissions.map(s=>s.section)).size,"Remaining"]].map(([v,l],i) => (
+              {[[allSubmissions.length,"Submissions"],[new Set(allSubmissions.map(s=>s.section)).size,"Sections Filled"],[15-new Set(allSubmissions.map(s=>s.section)).size,"Remaining"]].map(([v,l],i) => (
                 <div key={i} style={{ textAlign: "center" }}>
                   <div style={{ fontSize: 32, fontWeight: 300, color: "#8B6914" }}>{v}</div>
                   <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#9B8E78", fontFamily: "'Crimson Pro', serif" }}>{l}</div>
                 </div>
               ))}
             </div>
-            <button onClick={() => { setSelectedSection(null); setView("submit"); }}
+            <button onClick={() => { setSelectedSection(null); setSelectedHaggadot([]); setView("submit"); }}
               style={{ padding: "14px 44px", borderRadius: 28, background: "#2C2416", color: "#FAF6F0", border: "none", fontSize: 15, fontFamily: "'Crimson Pro', serif", fontWeight: 500, letterSpacing: "0.08em", cursor: "pointer", boxShadow: "0 4px 20px rgba(44,36,22,0.2)" }}>
               Add Your Dvar Torah
             </button>
@@ -390,51 +394,99 @@ export default function App() {
         {/* ═══ SUBMIT ═══ */}
         {view === "submit" && (
           <div className="fade-up">
-            {!selectedSection ? (
-              <div>
-                <div style={{ textAlign: "center", marginBottom: 36 }}>
-                  <div style={{ fontSize: 12, letterSpacing: "0.25em", textTransform: "uppercase", color: "#8B6914", fontFamily: "'Crimson Pro', serif", marginBottom: 8 }}>Step 1</div>
-                  <h2 style={{ fontSize: 28, fontWeight: 400 }}>Choose a Section</h2>
-                  <p style={{ fontSize: 14, color: "#8B7D66", fontFamily: "'Crimson Pro', serif", marginTop: 6, fontWeight: 300 }}>Select where in the Seder your insight belongs</p>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 12 }}>
-                  {SECTIONS.map(s => {
-                    const c = submissions.filter(x => x.section === s.num).length;
-                    return (
-                      <div key={s.num} className="sc" onClick={() => setSelectedSection(s.num)}
-                        style={{ padding: "18px 20px", borderRadius: 12, background: "#FFFCF7", border: "1px solid rgba(139,105,20,0.1)", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, boxShadow: "0 2px 8px rgba(139,105,20,0.04)" }}>
-                        <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg, #FAF1DD, #F0E4C8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{s.icon}</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-                            <span style={{ fontSize: 16, fontWeight: 600 }}>{s.en}</span>
-                            <span style={{ fontSize: 15, color: "#8B6914", fontFamily: "'Frank Ruhl Libre', serif", direction: "rtl" }}>{s.he}</span>
-                          </div>
-                          <div style={{ fontSize: 12, color: "#9B8E78", marginTop: 2, fontFamily: "'Crimson Pro', serif", fontWeight: 300, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.desc}</div>
-                        </div>
-                        {c > 0 && <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#8B6914", color: "#fff", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Crimson Pro', serif", fontWeight: 600, flexShrink: 0 }}>{c}</div>}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : submitSuccess ? (
+            {submitSuccess ? (
               <div className="fade-up" style={{ textAlign: "center", padding: "80px 0" }}>
                 <div style={{ fontSize: 48, marginBottom: 16 }}>✨</div>
                 <h2 style={{ fontSize: 28, fontWeight: 400 }}>!תודה רבה</h2>
                 <p style={{ fontSize: 15, color: "#8B7D66", marginTop: 8, fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}>Your dvar Torah has been submitted</p>
               </div>
+            ) : !selectedSection ? (
+              <div>
+                {/* Haggadah selector */}
+                <div style={{ textAlign: "center", marginBottom: 32 }}>
+                  <div style={{ fontSize: 12, letterSpacing: "0.25em", textTransform: "uppercase", color: "#8B6914", fontFamily: "'Crimson Pro', serif", marginBottom: 8 }}>Step 1</div>
+                  <h2 style={{ fontSize: 28, fontWeight: 400, marginBottom: 6 }}>Which Haggadah?</h2>
+                  <p style={{ fontSize: 14, color: "#8B7D66", fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}>Select which family Haggadah to add your dvar Torah to</p>
+                </div>
+                <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 36, flexWrap: "wrap" }}>
+                  {[...HAGGADOT, { id: "both", name: "Both" }].map(h => {
+                    const isSelected = h.id === "both"
+                      ? selectedHaggadot.length === 2
+                      : selectedHaggadot.includes(h.id);
+                    return (
+                      <div key={h.id} className="hag-chip" onClick={() => {
+                        if (h.id === "both") {
+                          setSelectedHaggadot(selectedHaggadot.length === 2 ? [] : HAGGADOT.map(x => x.id));
+                        } else {
+                          toggleHaggadah(h.id);
+                        }
+                      }} style={{
+                        padding: "14px 28px", borderRadius: 14,
+                        background: isSelected ? "#2C2416" : "#FFFCF7",
+                        color: isSelected ? "#FAF6F0" : "#2C2416",
+                        border: `1px solid ${isSelected ? "#2C2416" : "rgba(139,105,20,0.15)"}`,
+                        fontSize: 16, fontFamily: "'Cormorant Garamond', serif", fontWeight: 500,
+                        boxShadow: isSelected ? "0 4px 16px rgba(44,36,22,0.2)" : "0 2px 8px rgba(139,105,20,0.04)",
+                      }}>
+                        {h.name}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {selectedHaggadot.length > 0 && (
+                  <div className="fade-up">
+                    <div style={{ textAlign: "center", marginBottom: 28 }}>
+                      <div style={{ fontSize: 12, letterSpacing: "0.25em", textTransform: "uppercase", color: "#8B6914", fontFamily: "'Crimson Pro', serif", marginBottom: 8 }}>Step 2</div>
+                      <h2 style={{ fontSize: 28, fontWeight: 400 }}>Choose a Section</h2>
+                      <p style={{ fontSize: 14, color: "#8B7D66", fontFamily: "'Crimson Pro', serif", marginTop: 6, fontWeight: 300 }}>Select where in the Seder your insight belongs</p>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 12 }}>
+                      {SECTIONS.map(s => {
+                        const c = allSubmissions.filter(x => x.section === s.num).length;
+                        return (
+                          <div key={s.num} className="sc" onClick={() => setSelectedSection(s.num)}
+                            style={{ padding: "18px 20px", borderRadius: 12, background: "#FFFCF7", border: "1px solid rgba(139,105,20,0.1)", display: "flex", alignItems: "center", gap: 14, boxShadow: "0 2px 8px rgba(139,105,20,0.04)" }}>
+                            <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg, #FAF1DD, #F0E4C8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{s.icon}</div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                                <span style={{ fontSize: 16, fontWeight: 600 }}>{s.en}</span>
+                                <span style={{ fontSize: 15, color: "#8B6914", fontFamily: "'Frank Ruhl Libre', serif", direction: "rtl" }}>{s.he}</span>
+                              </div>
+                              <div style={{ fontSize: 12, color: "#9B8E78", marginTop: 2, fontFamily: "'Crimson Pro', serif", fontWeight: 300, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.desc}</div>
+                            </div>
+                            {c > 0 && <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#8B6914", color: "#fff", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Crimson Pro', serif", fontWeight: 600, flexShrink: 0 }}>{c}</div>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (() => {
               const sec = SECTIONS.find(s => s.num === selectedSection);
-              const ok = authorName.trim() && (inputMode === "text" ? dvarTorah.trim() : (uploadedContent && !parsing));
+              const ok = authorName.trim() && selectedHaggadot.length > 0 && (inputMode === "text" ? dvarTorah.trim() : (uploadedContent && !parsing));
               return (
                 <div>
                   <button onClick={() => setSelectedSection(null)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#8B6914", fontFamily: "'Crimson Pro', serif", marginBottom: 20 }}>← Back to sections</button>
-                  <div style={{ background: "linear-gradient(135deg, #FAF1DD, #F0E4C8)", padding: "20px 24px", borderRadius: 14, marginBottom: 28, display: "flex", alignItems: "center", gap: 16 }}>
+
+                  <div style={{ background: "linear-gradient(135deg, #FAF1DD, #F0E4C8)", padding: "20px 24px", borderRadius: 14, marginBottom: 20, display: "flex", alignItems: "center", gap: 16 }}>
                     <div style={{ fontSize: 32 }}>{sec.icon}</div>
                     <div>
                       <div style={{ fontSize: 20, fontWeight: 600 }}>{sec.en} <span style={{ fontFamily: "'Frank Ruhl Libre', serif", fontSize: 18, color: "#8B6914" }}>{sec.he}</span></div>
                       <div style={{ fontSize: 13, color: "#6B5A3E", fontFamily: "'Crimson Pro', serif", fontWeight: 300, marginTop: 2 }}>{sec.desc}</div>
                     </div>
+                  </div>
+
+                  {/* Submitting to badge */}
+                  <div style={{ marginBottom: 20, fontSize: 13, color: "#8B7D66", fontFamily: "'Crimson Pro', serif", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span>Submitting to:</span>
+                    {selectedHaggadot.map(id => {
+                      const h = HAGGADOT.find(x => x.id === id);
+                      return h ? (
+                        <span key={id} style={{ padding: "4px 12px", borderRadius: 12, background: "rgba(139,105,20,0.1)", fontSize: 12, fontWeight: 500, color: "#8B6914" }}>{h.name}</span>
+                      ) : null;
+                    })}
                   </div>
 
                   <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
@@ -494,6 +546,12 @@ export default function App() {
                     </div>
                   )}
 
+                  {submitError && (
+                    <div style={{ marginTop: 14, padding: "12px 16px", borderRadius: 10, background: "#FFF0F0", border: "1px solid #FFCCCC", fontSize: 13, color: "#CC3333", fontFamily: "'Crimson Pro', serif" }}>
+                      {submitError}
+                    </div>
+                  )}
+
                   <button onClick={handleSubmit} disabled={!ok||submitting} style={{
                     marginTop: 20, padding: "14px 44px", borderRadius: 28, width: "100%",
                     background: "#2C2416", color: "#FAF6F0", border: "none", fontSize: 15,
@@ -523,23 +581,42 @@ export default function App() {
               </div>
             ) : (
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
                   <h2 style={{ fontSize: 26, fontWeight: 400 }}>Admin Dashboard</h2>
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <button onClick={doExport} disabled={exporting}
-                      style={{ padding: "10px 24px", borderRadius: 22, background: "#2C2416", color: "#FAF6F0", border: "none", fontSize: 13, fontFamily: "'Crimson Pro', serif", fontWeight: 500, cursor: "pointer", letterSpacing: "0.05em", opacity: exporting ? 0.5:1 }}>
-                      {exporting ? "Exporting..." : "Export PDF 📄"}
-                    </button>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <button onClick={() => setView("preview")}
-                      style={{ padding: "10px 24px", borderRadius: 22, background: "#8B6914", color: "#fff", border: "none", fontSize: 13, fontFamily: "'Crimson Pro', serif", fontWeight: 500, cursor: "pointer", letterSpacing: "0.05em" }}>
+                      style={{ padding: "10px 24px", borderRadius: 22, background: "#8B6914", color: "#fff", border: "none", fontSize: 13, fontFamily: "'Crimson Pro', serif", fontWeight: 500, cursor: "pointer" }}>
                       Preview ✨
                     </button>
                   </div>
                 </div>
 
+                {/* Filter + Export */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+                  <div style={{ display: "flex", gap: 4, background: "rgba(139,105,20,0.06)", borderRadius: 10, padding: 4 }}>
+                    {[["all","All"],["ottensoser","Ottensoser"],["siegel","Siegel"]].map(([id,label]) => (
+                      <button key={id} onClick={() => setAdminFilter(id)} style={{
+                        padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer",
+                        fontSize: 13, fontFamily: "'Crimson Pro', serif", fontWeight: 500,
+                        background: adminFilter===id ? "#FFFCF7":"transparent",
+                        color: adminFilter===id ? "#2C2416":"#8B7D66",
+                        boxShadow: adminFilter===id ? "0 1px 4px rgba(0,0,0,0.06)":"none",
+                      }}>{label}</button>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {HAGGADOT.map(h => (
+                      <button key={h.id} onClick={() => doExport(h.id)} disabled={exporting}
+                        style={{ padding: "8px 18px", borderRadius: 18, background: "#2C2416", color: "#FAF6F0", border: "none", fontSize: 12, fontFamily: "'Crimson Pro', serif", fontWeight: 500, cursor: "pointer", opacity: exporting?0.5:1 }}>
+                        {exporting ? "..." : `Export ${h.name} PDF`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div style={{ background: "rgba(139,105,20,0.04)", borderRadius: 10, padding: "12px 16px", marginBottom: 24, fontSize: 12, color: "#8B7D66", fontFamily: "'Crimson Pro', serif", display: "flex", gap: 20, flexWrap: "wrap", alignItems: "center" }}>
                   <span>↑↓ Reorder</span><span>✏️ Edit</span><span>× Delete</span>
-                  <span style={{ marginLeft: "auto", color: "#9B8E78" }}>{submissions.length} total</span>
+                  <span style={{ marginLeft: "auto", color: "#9B8E78" }}>{submissions.length} submissions</span>
                 </div>
 
                 {SECTIONS.map(sec => {
@@ -578,8 +655,13 @@ export default function App() {
                                 <div>
                                   <span style={{ fontSize: 15, fontWeight: 600 }}>{sub.author}</span>
                                   {sub.title && <span style={{ fontSize: 14, color: "#6B5A3E", fontStyle: "italic", marginLeft: 10 }}>"{sub.title}"</span>}
-                                  <div style={{ fontSize: 11, color: "#9B8E78", fontFamily: "'Crimson Pro', serif", marginTop: 2 }}>
-                                    {sub.date}{sub.fileName ? ` · ${sub.fileName}` : ""}
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3 }}>
+                                    <span style={{ fontSize: 11, color: "#9B8E78", fontFamily: "'Crimson Pro', serif" }}>
+                                      {sub.date}{sub.fileName ? ` · ${sub.fileName}` : ""}
+                                    </span>
+                                    <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 8, background: "rgba(139,105,20,0.08)", color: "#8B6914", fontFamily: "'Crimson Pro', serif", fontWeight: 500 }}>
+                                      {getHaggadahLabel(sub)}
+                                    </span>
                                   </div>
                                 </div>
                                 <div style={{ display: "flex", gap: 2, alignItems: "center", flexShrink: 0 }}>
@@ -604,7 +686,7 @@ export default function App() {
                 })}
                 {!submissions.length && (
                   <div style={{ textAlign: "center", padding: "60px 0", color: "#9B8E78", fontFamily: "'Crimson Pro', serif", fontSize: 15 }}>
-                    No submissions yet. Share the link with your family!
+                    {adminFilter === "all" ? "No submissions yet. Share the link with your family!" : `No submissions for ${adminFilter === "ottensoser" ? "Ottensoser" : "Siegel"} family yet.`}
                   </div>
                 )}
               </div>
@@ -617,16 +699,26 @@ export default function App() {
           <div className="fade-up">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
               <button onClick={() => setView("admin")} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#8B6914", fontFamily: "'Crimson Pro', serif" }}>← Back to Admin</button>
-              <button onClick={doExport} disabled={exporting} style={{ padding: "10px 24px", borderRadius: 22, background: "#2C2416", color: "#FAF6F0", border: "none", fontSize: 13, fontFamily: "'Crimson Pro', serif", fontWeight: 500, cursor: "pointer", opacity: exporting?0.5:1 }}>
-                {exporting ? "Exporting..." : "Export PDF 📄"}
-              </button>
+              <div style={{ display: "flex", gap: 4, background: "rgba(139,105,20,0.06)", borderRadius: 10, padding: 4 }}>
+                {[["all","All"],["ottensoser","Ottensoser"],["siegel","Siegel"]].map(([id,label]) => (
+                  <button key={id} onClick={() => setAdminFilter(id)} style={{
+                    padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer",
+                    fontSize: 13, fontFamily: "'Crimson Pro', serif", fontWeight: 500,
+                    background: adminFilter===id ? "#FFFCF7":"transparent",
+                    color: adminFilter===id ? "#2C2416":"#8B7D66",
+                    boxShadow: adminFilter===id ? "0 1px 4px rgba(0,0,0,0.06)":"none",
+                  }}>{label}</button>
+                ))}
+              </div>
             </div>
 
             <div style={{ textAlign: "center", padding: "56px 24px 48px", background: "linear-gradient(170deg, #FFFDF8, #F8F0E0)", border: "1px solid rgba(139,105,20,0.12)", borderRadius: 18, marginBottom: 36, boxShadow: "0 8px 40px rgba(139,105,20,0.08)", position: "relative", overflow: "hidden" }}>
               <div style={{ position: "absolute", top: 16, left: 16, right: 16, bottom: 16, border: "1px solid rgba(139,105,20,0.1)", borderRadius: 10, pointerEvents: "none" }} />
               <div style={{ fontSize: 38, color: "#8B6914", fontFamily: "'Frank Ruhl Libre', serif", marginBottom: 8, direction: "rtl" }}>הַגָּדָה שֶׁל פֶּסַח</div>
               <div style={{ width: 80, height: 1, margin: "16px auto", background: "linear-gradient(90deg, transparent, #C4943D, transparent)" }} />
-              <h1 style={{ fontSize: 36, fontWeight: 400, color: "#2C2416", marginBottom: 4 }}>The {familyName} Haggadah</h1>
+              <h1 style={{ fontSize: 36, fontWeight: 400, color: "#2C2416", marginBottom: 4 }}>
+                {adminFilter === "all" ? "Family" : adminFilter === "ottensoser" ? "Ottensoser" : "Siegel"} Haggadah
+              </h1>
               <div style={{ fontSize: 16, color: "#8B6914", fontFamily: "'Crimson Pro', serif", fontWeight: 300, fontStyle: "italic" }}>Passover {year}</div>
             </div>
 
