@@ -284,9 +284,16 @@ function exportHaggadah(submissions, familyName, year, settings) {
 
 // ─── File parsing ───
 
-async function loadScript(src) {
+async function loadScript(src, timeout = 10000) {
   if (document.querySelector(`script[src="${src}"]`)) return;
-  return new Promise((r, j) => { const s = document.createElement("script"); s.src = src; s.onload = r; s.onerror = j; document.head.appendChild(s); });
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error("Failed to load: " + src));
+    document.head.appendChild(s);
+    setTimeout(() => reject(new Error("Timeout loading: " + src)), timeout);
+  });
 }
 
 async function parsePDF(file) {
@@ -302,9 +309,11 @@ async function parsePDF(file) {
 }
 
 async function parseDOCX(file) {
-  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js");
-  const r = await window.mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
-  return r.value;
+  // Use mammoth from npm (bundled with the app)
+  const mammoth = await import("mammoth/mammoth.browser.js");
+  const buf = await file.arrayBuffer();
+  const result = await mammoth.convertToHtml({ arrayBuffer: buf });
+  return result.value;
 }
 
 async function parseFile(file) {
@@ -677,9 +686,26 @@ export default function App() {
                     </>
                   ) : (
                     <div>
-                      <div onClick={() => fileInputRef.current?.click()} style={{
+                      <div onClick={() => fileInputRef.current?.click()}
+                        onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "#8B6914"; e.currentTarget.style.background = "rgba(139,105,20,0.06)"; }}
+                        onDragLeave={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "rgba(139,105,20,0.2)"; e.currentTarget.style.background = uploadedFile ? "rgba(139,105,20,0.04)" : "transparent"; }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.style.borderColor = "rgba(139,105,20,0.2)";
+                          e.currentTarget.style.background = "rgba(139,105,20,0.04)";
+                          const file = e.dataTransfer.files?.[0];
+                          if (file) {
+                            // Trigger the same handler as file input
+                            const dt = new DataTransfer();
+                            dt.items.add(file);
+                            fileInputRef.current.files = dt.files;
+                            fileInputRef.current.dispatchEvent(new Event("change", { bubbles: true }));
+                          }
+                        }}
+                        style={{
                         border: "2px dashed rgba(139,105,20,0.2)", borderRadius: 14, padding: "48px 24px",
-                        textAlign: "center", cursor: "pointer", background: uploadedFile ? "rgba(139,105,20,0.04)" : "transparent" }}>
+                        textAlign: "center", cursor: "pointer", background: uploadedFile ? "rgba(139,105,20,0.04)" : "transparent",
+                        transition: "all 0.2s ease" }}>
                         <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".doc,.docx,.pdf,.txt,.md" style={{ display: "none" }} />
                         {parsing ? (
                           <div>
@@ -690,12 +716,12 @@ export default function App() {
                           <div>
                             <div style={{ fontSize: 28, marginBottom: 8 }}>📄</div>
                             <div style={{ fontSize: 15, fontFamily: "'Crimson Pro', serif", fontWeight: 500 }}>{uploadedFile.name}</div>
-                            <div style={{ fontSize: 12, color: "#8B7D66", marginTop: 4, fontFamily: "'Crimson Pro', serif" }}>Click to replace</div>
+                            <div style={{ fontSize: 12, color: "#8B7D66", marginTop: 4, fontFamily: "'Crimson Pro', serif" }}>Click or drag to replace</div>
                           </div>
                         ) : (
                           <div>
                             <div style={{ fontSize: 28, marginBottom: 8 }}>📤</div>
-                            <div style={{ fontSize: 15, fontFamily: "'Crimson Pro', serif", color: "#6B5A3E" }}>Click to upload a document</div>
+                            <div style={{ fontSize: 15, fontFamily: "'Crimson Pro', serif", color: "#6B5A3E" }}>Click or drag & drop a document</div>
                             <div style={{ fontSize: 12, color: "#9B8E78", marginTop: 4, fontFamily: "'Crimson Pro', serif" }}>.docx, .pdf, or .txt</div>
                           </div>
                         )}
