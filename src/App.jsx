@@ -991,6 +991,11 @@ export default function App() {
                                         📎 {sub.fileName || "Original file"}
                                       </a>
                                     )}
+                                    {sub.fileName && !sub.fileUrl && (
+                                      <span style={{ fontSize: 11, color: "#9B8E78", fontFamily: "'Crimson Pro', serif" }}>
+                                        📎 {sub.fileName} <span style={{ fontSize: 10, color: "#BDB3A0" }}>(uploading...)</span>
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                                 <div style={{ display: "flex", gap: 2, alignItems: "center", flexShrink: 0 }}>
@@ -1000,6 +1005,35 @@ export default function App() {
                                   <button className="ab" onClick={() => deleteSub(sub.id)} style={{ background:"none", border:"none", cursor:"pointer", color:"#C0A080", fontSize:18, padding:"4px 6px", borderRadius:6 }}>×</button>
                                 </div>
                               </div>
+
+                              {/* Attached file banner */}
+                              {sub.fileName && (
+                                <div style={{
+                                  display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
+                                  background: "rgba(139,105,20,0.04)", borderRadius: 8, marginBottom: 10,
+                                  border: "1px solid rgba(139,105,20,0.08)",
+                                }}>
+                                  <span style={{ fontSize: 20 }}>📄</span>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: 13, fontFamily: "'Crimson Pro', serif", fontWeight: 500, color: "#2C2416", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                      {sub.fileName}
+                                    </div>
+                                    <div style={{ fontSize: 11, color: "#9B8E78", fontFamily: "'Crimson Pro', serif" }}>
+                                      Original uploaded file
+                                    </div>
+                                  </div>
+                                  {sub.fileUrl ? (
+                                    <a href={sub.fileUrl} target="_blank" rel="noopener noreferrer" style={{
+                                      padding: "6px 14px", borderRadius: 8, background: "#8B6914", color: "#fff",
+                                      fontSize: 12, fontFamily: "'Crimson Pro', serif", fontWeight: 500,
+                                      textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0,
+                                    }}>Download</a>
+                                  ) : (
+                                    <span style={{ fontSize: 11, color: "#BDB3A0", fontFamily: "'Crimson Pro', serif", flexShrink: 0 }}>Uploading...</span>
+                                  )}
+                                </div>
+                              )}
+
                               <div className="rich-content" style={{ fontSize: 14, lineHeight: 1.65, color: "#4A4030", fontFamily: "'Crimson Pro', serif", fontWeight: 300, maxHeight: 150, overflow: "hidden",
                                 maskImage: "linear-gradient(to bottom, black 70%, transparent)", WebkitMaskImage: "linear-gradient(to bottom, black 70%, transparent)" }}
                                 dangerouslySetInnerHTML={{ __html: sub.content }} />
