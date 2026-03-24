@@ -377,7 +377,7 @@ export default function App() {
   const handleSubmit = useCallback(async () => {
     const content = inputMode === "text" ? richContent : uploadedContent;
     const authorName = fullName.trim();
-    if (!authorName || !title.trim() || !content || content === "<p></p>" || !selectedHaggadot.length) return;
+    if (!authorName || !title.trim() || !content || content === "<p></p>") return;
     setSubmitting(true); setSubmitError(null);
     try {
       let fileUrl = null;
@@ -388,7 +388,7 @@ export default function App() {
       await addSubmission({
         section: selectedSection, author: authorName, title: title.trim(),
         content, date: new Date().toLocaleDateString(),
-        haggadot: selectedHaggadot,
+        haggadot: [],
         order: allSubmissions.filter(s => s.section === selectedSection).length,
         fileName: uploadedFile?.name || null,
         fileUrl: fileUrl,
@@ -581,59 +581,34 @@ export default function App() {
               </div>
             ) : !selectedSection && selectedSection !== 0 && selectedSection !== -1 && selectedSection !== 99 ? (
               <div>
-                <div style={{ textAlign: "center", marginBottom: 32 }}>
+                <div style={{ textAlign: "center", marginBottom: 28 }}>
                   <div style={{ fontSize: 12, letterSpacing: "0.25em", textTransform: "uppercase", color: "#8B6914", fontFamily: "'Crimson Pro', serif", marginBottom: 8 }}>Step 1</div>
-                  <h2 style={{ fontSize: 28, fontWeight: 400, marginBottom: 6 }}>Which Haggadah?</h2>
-                  <p style={{ fontSize: 14, color: "#8B7D66", fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}>Select which family Haggadah to add your dvar Torah to</p>
+                  <h2 style={{ fontSize: 28, fontWeight: 400 }}>Choose a Section</h2>
+                  <p style={{ fontSize: 14, color: "#8B7D66", fontFamily: "'Crimson Pro', serif", marginTop: 6, fontWeight: 300 }}>Select where in the Seder your insight belongs</p>
                 </div>
-                <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 36, flexWrap: "wrap" }}>
-                  {[...HAGGADOT, { id: "both", name: "Both" }].map(h => {
-                    const isSel = h.id === "both" ? selectedHaggadot.length === 2 : selectedHaggadot.includes(h.id);
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+                  {SECTIONS.map(s => {
+                    const c = allSubmissions.filter(x => x.section === s.num).length;
                     return (
-                      <div key={h.id} className="hag-chip" onClick={() => {
-                        if (h.id === "both") setSelectedHaggadot(selectedHaggadot.length === 2 ? [] : HAGGADOT.map(x => x.id));
-                        else toggleHaggadah(h.id);
-                      }} style={{
-                        padding: "14px 28px", borderRadius: 14,
-                        background: isSel ? "#2C2416" : "#FFFCF7", color: isSel ? "#FAF6F0" : "#2C2416",
-                        border: `1px solid ${isSel ? "#2C2416" : "rgba(139,105,20,0.15)"}`,
-                        fontSize: 16, fontFamily: "'Cormorant Garamond', serif", fontWeight: 500,
-                        boxShadow: isSel ? "0 4px 16px rgba(44,36,22,0.2)" : "0 2px 8px rgba(139,105,20,0.04)",
-                      }}>{h.name}</div>
+                      <div key={s.num} className="sc" onClick={() => setSelectedSection(s.num)}
+                        style={{ padding: "14px 14px", borderRadius: 12, background: "#FFFCF7", border: "1px solid rgba(139,105,20,0.1)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 8, boxShadow: "0 2px 8px rgba(139,105,20,0.04)" }}>
+                        <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg, #FAF1DD, #F0E4C8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{s.icon}</div>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.3 }}>{s.en}</div>
+                          <div style={{ fontSize: 13, color: "#8B6914", fontFamily: "'Frank Ruhl Libre', serif", direction: "rtl", marginTop: 2 }}>{s.he}</div>
+                          <div style={{ fontSize: 11, color: "#9B8E78", marginTop: 3, fontFamily: "'Crimson Pro', serif", fontWeight: 300, lineHeight: 1.3 }}>{s.desc}</div>
+                        </div>
+                        {c > 0 && <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#8B6914", color: "#fff", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 600 }}>{c}</div>}
+                      </div>
                     );
                   })}
                 </div>
-                {selectedHaggadot.length > 0 && (
-                  <div className="fade-up">
-                    <div style={{ textAlign: "center", marginBottom: 28 }}>
-                      <div style={{ fontSize: 12, letterSpacing: "0.25em", textTransform: "uppercase", color: "#8B6914", fontFamily: "'Crimson Pro', serif", marginBottom: 8 }}>Step 2</div>
-                      <h2 style={{ fontSize: 28, fontWeight: 400 }}>Choose a Section</h2>
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
-                      {SECTIONS.map(s => {
-                        const c = allSubmissions.filter(x => x.section === s.num).length;
-                        return (
-                          <div key={s.num} className="sc" onClick={() => setSelectedSection(s.num)}
-                            style={{ padding: "14px 14px", borderRadius: 12, background: "#FFFCF7", border: "1px solid rgba(139,105,20,0.1)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 8, boxShadow: "0 2px 8px rgba(139,105,20,0.04)" }}>
-                            <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg, #FAF1DD, #F0E4C8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{s.icon}</div>
-                            <div>
-                              <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.3 }}>{s.en}</div>
-                              <div style={{ fontSize: 13, color: "#8B6914", fontFamily: "'Frank Ruhl Libre', serif", direction: "rtl", marginTop: 2 }}>{s.he}</div>
-                              <div style={{ fontSize: 11, color: "#9B8E78", marginTop: 3, fontFamily: "'Crimson Pro', serif", fontWeight: 300, lineHeight: 1.3 }}>{s.desc}</div>
-                            </div>
-                            {c > 0 && <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#8B6914", color: "#fff", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 600 }}>{c}</div>}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
             ) : (() => {
               const sec = SECTIONS.find(s => s.num === selectedSection);
               const content = inputMode === "text" ? richContent : uploadedContent;
               const hasContent = content && content !== "<p></p>" && content.replace(/<[^>]*>/g, "").trim().length > 0;
-              const ok = fullName.trim() && title.trim() && selectedHaggadot.length > 0 && hasContent && !parsing;
+              const ok = fullName.trim() && title.trim() && hasContent && !parsing;
               return (
                 <div>
                   <button onClick={() => setSelectedSection(null)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#8B6914", fontFamily: "'Crimson Pro', serif", marginBottom: 20 }}>← Back to sections</button>
@@ -644,14 +619,6 @@ export default function App() {
                       <div style={{ fontSize: 20, fontWeight: 600 }}>{sec.en} <span style={{ fontFamily: "'Frank Ruhl Libre', serif", fontSize: 18, color: "#8B6914" }}>{sec.he}</span></div>
                       <div style={{ fontSize: 13, color: "#6B5A3E", fontFamily: "'Crimson Pro', serif", fontWeight: 300, marginTop: 2 }}>{sec.desc}</div>
                     </div>
-                  </div>
-
-                  <div style={{ marginBottom: 20, fontSize: 13, color: "#8B7D66", fontFamily: "'Crimson Pro', serif", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <span>Submitting to:</span>
-                    {selectedHaggadot.map(id => {
-                      const h = HAGGADOT.find(x => x.id === id);
-                      return h ? <span key={id} style={{ padding: "4px 12px", borderRadius: 12, background: "rgba(139,105,20,0.1)", fontSize: 12, fontWeight: 500, color: "#8B6914" }}>{h.name}</span> : null;
-                    })}
                   </div>
 
                   <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
@@ -924,7 +891,23 @@ export default function App() {
                                   {sub.title && <span style={{ fontSize: 14, color: "#6B5A3E", fontStyle: "italic", marginLeft: 10 }}>"{sub.title}"</span>}
                                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, flexWrap: "wrap" }}>
                                     <span style={{ fontSize: 11, color: "#9B8E78", fontFamily: "'Crimson Pro', serif" }}>{sub.date}</span>
-                                    <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 8, background: "rgba(139,105,20,0.08)", color: "#8B6914", fontFamily: "'Crimson Pro', serif", fontWeight: 500 }}>{getHaggadahLabel(sub)}</span>
+                                    {HAGGADOT.map(h => {
+                                      const tagged = sub.haggadot?.includes(h.id);
+                                      return (
+                                        <button key={h.id} onClick={async () => {
+                                          const current = sub.haggadot || [];
+                                          const next = tagged ? current.filter(x => x !== h.id) : [...current, h.id];
+                                          try { await updateSubmission(sub.id, { haggadot: next }); } catch(e) { console.error(e); }
+                                        }} style={{
+                                          fontSize: 10, padding: "2px 10px", borderRadius: 10, cursor: "pointer",
+                                          border: tagged ? "1px solid #8B6914" : "1px dashed rgba(139,105,20,0.3)",
+                                          background: tagged ? "#8B6914" : "transparent",
+                                          color: tagged ? "#fff" : "#8B7D66",
+                                          fontFamily: "'Crimson Pro', serif", fontWeight: 500,
+                                          transition: "all .2s",
+                                        }}>{h.name.split(" ")[0]}</button>
+                                      );
+                                    })}
                                     {sub.fileUrl && (
                                       <a href={sub.fileUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "#8B6914", fontFamily: "'Crimson Pro', serif", textDecoration: "underline" }}>
                                         📎 {sub.fileName || "Original file"}
