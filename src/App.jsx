@@ -377,7 +377,7 @@ export default function App() {
   const handleSubmit = useCallback(async () => {
     const content = inputMode === "text" ? richContent : uploadedContent;
     const authorName = fullName.trim();
-    if (!authorName || !title.trim() || !content || content === "<p></p>") return;
+    if (!authorName || !title.trim() || !content || content === "<p></p>" || !selectedHaggadot.length) return;
     setSubmitting(true); setSubmitError(null);
     try {
       let fileUrl = null;
@@ -388,7 +388,7 @@ export default function App() {
       await addSubmission({
         section: selectedSection, author: authorName, title: title.trim(),
         content, date: new Date().toLocaleDateString(),
-        haggadot: [],
+        haggadot: selectedHaggadot,
         order: allSubmissions.filter(s => s.section === selectedSection).length,
         fileName: uploadedFile?.name || null,
         fileUrl: fileUrl,
@@ -552,10 +552,13 @@ export default function App() {
               {HAGGADOT.map(h => <span key={h.id} style={{ fontSize: 14, color: "#6B5A3E", fontFamily: "'Crimson Pro', serif", fontStyle: "italic", fontWeight: 300 }}>{h.name}</span>)}
             </div>
             <div style={{ width: 120, height: 1, margin: "0 auto 40px", background: "linear-gradient(90deg, transparent, #C4943D, transparent)" }} />
-            <p style={{ fontSize: 17, lineHeight: 1.7, color: "#5A4E3A", maxWidth: 520, margin: "0 auto 48px", fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}>
+            <p style={{ fontSize: 17, lineHeight: 1.7, color: "#5A4E3A", maxWidth: 520, margin: "0 auto 32px", fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}>
               A collection of divrei Torah and insights from our families, woven together to enrich our Seder tables. Each voice adds meaning to our shared story of freedom.
             </p>
-            <div style={{ marginBottom: 48 }} />
+            <div style={{ textAlign: "center", marginBottom: 48 }}>
+              <div style={{ fontSize: 32, fontWeight: 300, color: "#8B6914" }}>{allSubmissions.length}</div>
+              <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#9B8E78", fontFamily: "'Crimson Pro', serif" }}>Total Submissions</div>
+            </div>
             <button onClick={() => { setSelectedSection(null); setSelectedHaggadot([]); setRichContent(""); setUploadedFile(null); setUploadedContent(""); setView("submit"); }}
               style={{ padding: "14px 44px", borderRadius: 28, background: "#2C2416", color: "#FAF6F0", border: "none", fontSize: 15, fontFamily: "'Crimson Pro', serif", fontWeight: 500, letterSpacing: "0.08em", cursor: "pointer", boxShadow: "0 4px 20px rgba(44,36,22,0.2)" }}>
               Add Your Dvar Torah
@@ -608,7 +611,7 @@ export default function App() {
               const sec = SECTIONS.find(s => s.num === selectedSection);
               const content = inputMode === "text" ? richContent : uploadedContent;
               const hasContent = content && content !== "<p></p>" && content.replace(/<[^>]*>/g, "").trim().length > 0;
-              const ok = fullName.trim() && title.trim() && hasContent && !parsing;
+              const ok = fullName.trim() && title.trim() && selectedHaggadot.length > 0 && hasContent && !parsing;
               return (
                 <div>
                   <button onClick={() => setSelectedSection(null)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#8B6914", fontFamily: "'Crimson Pro', serif", marginBottom: 20 }}>← Back to sections</button>
@@ -618,6 +621,29 @@ export default function App() {
                     <div>
                       <div style={{ fontSize: 20, fontWeight: 600 }}>{sec.en} <span style={{ fontFamily: "'Frank Ruhl Libre', serif", fontSize: 18, color: "#8B6914" }}>{sec.he}</span></div>
                       <div style={{ fontSize: 13, color: "#6B5A3E", fontFamily: "'Crimson Pro', serif", fontWeight: 300, marginTop: 2 }}>{sec.desc}</div>
+                    </div>
+                  </div>
+
+                  {/* Haggadah selector */}
+                  <div style={{ marginBottom: 20 }}>
+                    <label style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#8B7D66", fontFamily: "'Crimson Pro', serif", marginBottom: 8, display: "block" }}>Which Haggadah? *</label>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {[...HAGGADOT, { id: "both", name: "Both" }].map(h => {
+                        const isSel = h.id === "both" ? selectedHaggadot.length === 2 : selectedHaggadot.includes(h.id);
+                        return (
+                          <button key={h.id} className="hag-chip" onClick={() => {
+                            if (h.id === "both") setSelectedHaggadot(selectedHaggadot.length === 2 ? [] : HAGGADOT.map(x => x.id));
+                            else toggleHaggadah(h.id);
+                          }} style={{
+                            padding: "10px 22px", borderRadius: 10, border: "none", cursor: "pointer",
+                            background: isSel ? "#2C2416" : "#FFFCF7",
+                            color: isSel ? "#FAF6F0" : "#2C2416",
+                            fontSize: 14, fontFamily: "'Crimson Pro', serif", fontWeight: 500,
+                            boxShadow: isSel ? "0 2px 12px rgba(44,36,22,0.15)" : "0 1px 4px rgba(139,105,20,0.08)",
+                            border: isSel ? "1px solid #2C2416" : "1px solid rgba(139,105,20,0.15)",
+                          }}>{h.name}</button>
+                        );
+                      })}
                     </div>
                   </div>
 
