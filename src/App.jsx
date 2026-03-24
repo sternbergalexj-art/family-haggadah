@@ -389,20 +389,32 @@ export default function App() {
     if (!authorName || !title.trim() || !content || content === "<p></p>" || !selectedHaggadot.length) return;
     setSubmitting(true); setSubmitError(null);
     try {
-      let fileUrl = null;
-      if (uploadedFile && inputMode === "upload") {
-        const path = `uploads/${Date.now()}_${uploadedFile.name}`;
-        fileUrl = await uploadFile(uploadedFile, path);
-      }
-      await addSubmission({
+      // Save submission immediately (no waiting for file upload)
+      const docRef = await addSubmission({
         section: selectedSection, author: authorName, title: title.trim(),
         content, date: new Date().toLocaleDateString(),
         haggadot: selectedHaggadot,
         order: allSubmissions.filter(s => s.section === selectedSection).length,
         fileName: uploadedFile?.name || null,
-        fileUrl: fileUrl,
+        fileUrl: null,
       });
       setSubmitSuccess(true);
+
+      // Upload original file in background (non-blocking)
+      if (uploadedFile && inputMode === "upload") {
+        const fileCopy = uploadedFile;
+        const docId = docRef.id;
+        (async () => {
+          try {
+            const path = `uploads/${Date.now()}_${fileCopy.name}`;
+            const url = await uploadFile(fileCopy, path);
+            await updateSubmission(docId, { fileUrl: url });
+          } catch (e) {
+            console.error("Background file upload failed:", e);
+          }
+        })();
+      }
+
       setTimeout(() => {
         setSubmitSuccess(false); setSelectedSection(null);
         setRichContent(""); setTitle(""); setSelectedHaggadot([]);
