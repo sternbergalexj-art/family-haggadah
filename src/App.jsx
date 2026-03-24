@@ -399,15 +399,20 @@ export default function App() {
   const handleSubmit = useCallback(async () => {
     const content = inputMode === "text" ? richContent : uploadedContent;
     const authorName = fullName.trim();
-    if (!authorName || !title.trim() || !content || content === "<p></p>" || !selectedHaggadot.length) return;
+    const plainContent = content ? content.replace(/<[^>]*>/g, "").trim() : "";
+    if (!authorName || !title.trim() || !plainContent || !selectedHaggadot.length || selectedSection === null) return;
     setSubmitting(true); setSubmitError(null);
     try {
       // Save submission immediately (no waiting for file upload)
-      const savedFileName = uploadedFile?.name || null;
+      const savedFileName = (uploadedFile && inputMode === "upload") ? uploadedFile.name : null;
       // Capture file data NOW before state gets cleared
       let fileBlob = null;
       if (uploadedFile && inputMode === "upload") {
-        fileBlob = new Blob([await uploadedFile.arrayBuffer()], { type: uploadedFile.type });
+        try {
+          fileBlob = new Blob([await uploadedFile.arrayBuffer()], { type: uploadedFile.type || "application/octet-stream" });
+        } catch (e) {
+          console.error("Failed to read file for upload:", e);
+        }
       }
 
       const docRef = await addSubmission({
