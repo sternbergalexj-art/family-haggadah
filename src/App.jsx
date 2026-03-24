@@ -321,8 +321,7 @@ export default function App() {
   const [selectedSection, setSelectedSection] = useState(null);
   const [allSubmissions, setAllSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [richContent, setRichContent] = useState("");
   const [title, setTitle] = useState("");
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -377,8 +376,8 @@ export default function App() {
 
   const handleSubmit = useCallback(async () => {
     const content = inputMode === "text" ? richContent : uploadedContent;
-    const authorName = `${firstName.trim()} ${lastName.trim()}`;
-    if (!firstName.trim() || !lastName.trim() || !title.trim() || !content || content === "<p></p>" || !selectedSection === null || !selectedHaggadot.length) return;
+    const authorName = fullName.trim();
+    if (!authorName || !title.trim() || !content || content === "<p></p>" || !selectedHaggadot.length) return;
     setSubmitting(true); setSubmitError(null);
     try {
       let fileUrl = null;
@@ -406,7 +405,7 @@ export default function App() {
       setSubmitError("Error: " + err.message);
     }
     setSubmitting(false);
-  }, [inputMode, richContent, uploadedContent, firstName, lastName, title, selectedSection, selectedHaggadot, allSubmissions, uploadedFile]);
+  }, [inputMode, richContent, uploadedContent, fullName, title, selectedSection, selectedHaggadot, allSubmissions, uploadedFile]);
 
   const deleteSub = useCallback(async (id) => {
     if (!confirm("Delete this submission?")) return;
@@ -568,6 +567,13 @@ export default function App() {
               style={{ padding: "14px 44px", borderRadius: 28, background: "#2C2416", color: "#FAF6F0", border: "none", fontSize: 15, fontFamily: "'Crimson Pro', serif", fontWeight: 500, letterSpacing: "0.08em", cursor: "pointer", boxShadow: "0 4px 20px rgba(44,36,22,0.2)" }}>
               Add Your Dvar Torah
             </button>
+
+            <div style={{ marginTop: 56 }}>
+              <div style={{ width: 80, height: 1, margin: "0 auto 20px", background: "linear-gradient(90deg, transparent, #C4943D, transparent)" }} />
+              <div style={{ fontSize: 20, color: "#8B6914", fontFamily: "'Frank Ruhl Libre', serif", direction: "rtl", marginBottom: 6 }}>לְשָׁנָה הַבָּאָה בִּירוּשָׁלָיִם</div>
+              <div style={{ fontSize: 15, color: "#6B5A3E", fontStyle: "italic", fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}>Next Year in Jerusalem</div>
+              <div style={{ fontSize: 14, color: "#8B6914", fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, marginTop: 12, letterSpacing: "0.05em" }}>— Anna and Harry</div>
+            </div>
           </div>
         )}
 
@@ -636,7 +642,7 @@ export default function App() {
               const sec = SECTIONS.find(s => s.num === selectedSection);
               const content = inputMode === "text" ? richContent : uploadedContent;
               const hasContent = content && content !== "<p></p>" && content.replace(/<[^>]*>/g, "").trim().length > 0;
-              const ok = firstName.trim() && lastName.trim() && title.trim() && selectedHaggadot.length > 0 && hasContent && !parsing;
+              const ok = fullName.trim() && title.trim() && selectedHaggadot.length > 0 && hasContent && !parsing;
               return (
                 <div>
                   <button onClick={() => setSelectedSection(null)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#8B6914", fontFamily: "'Crimson Pro', serif", marginBottom: 20 }}>← Back to sections</button>
@@ -659,12 +665,8 @@ export default function App() {
 
                   <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
                     <div>
-                      <label style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#8B7D66", fontFamily: "'Crimson Pro', serif", marginBottom: 6, display: "block" }}>First Name *</label>
-                      <input style={inp} value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="e.g. Sarah" />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#8B7D66", fontFamily: "'Crimson Pro', serif", marginBottom: 6, display: "block" }}>Last Name *</label>
-                      <input style={inp} value={lastName} onChange={e => setLastName(e.target.value)} placeholder="e.g. Cohen" />
+                      <label style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#8B7D66", fontFamily: "'Crimson Pro', serif", marginBottom: 6, display: "block" }}>Full Name *</label>
+                      <input style={inp} value={fullName} onChange={e => setFullName(e.target.value)} placeholder="e.g. Sarah Cohen" />
                     </div>
                   </div>
 
