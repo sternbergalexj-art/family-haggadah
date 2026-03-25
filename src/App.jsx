@@ -190,8 +190,8 @@ function generatePrintHTML(submissions, familyName, year, settings) {
         ${subs.length ? subs.map((sub, i) => `
           <div class="submission${i < subs.length - 1 ? " with-border" : ""}">
             ${sub.title ? `<div class="sub-title">${sub.title}</div>` : ""}
-            <div class="sub-content">${sub.content}</div>
             <div class="sub-author">— ${sub.author}</div>
+            <div class="sub-content">${sub.content}</div>
           </div>
         `).join("") : `<div class="no-subs">No submissions for this section</div>`}
       </div>
@@ -434,10 +434,12 @@ export default function App() {
         (async () => {
           try {
             const url = await uploadFile(fileBlob, path);
-            await updateSubmission(docId, { fileUrl: url });
+            await updateSubmission(docId, { fileUrl: url, fileError: null });
             console.log("File uploaded successfully:", url);
           } catch (e) {
             console.error("Background file upload failed:", e.message, e);
+            // Save the error so admin can see it
+            try { await updateSubmission(docId, { fileError: e.message }); } catch (_) {}
           }
         })();
       }
@@ -1042,6 +1044,10 @@ export default function App() {
                                       fontSize: 12, fontFamily: "'Crimson Pro', serif", fontWeight: 500,
                                       textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0,
                                     }}>Download</a>
+                                  ) : sub.fileError ? (
+                                    <span style={{ fontSize: 11, color: "#CC3333", fontFamily: "'Crimson Pro', serif", flexShrink: 0, maxWidth: 200, textAlign: "right" }}>
+                                      Upload failed: {sub.fileError}
+                                    </span>
                                   ) : (
                                     <span style={{ fontSize: 11, color: "#BDB3A0", fontFamily: "'Crimson Pro', serif", flexShrink: 0 }}>Uploading...</span>
                                   )}
@@ -1110,10 +1116,10 @@ export default function App() {
                   </div>
                   {subs.length > 0 ? subs.map((sub, i) => (
                     <div key={sub.id} style={{ marginLeft: 50, marginBottom: i<subs.length-1?20:0, paddingBottom: i<subs.length-1?20:0, borderBottom: i<subs.length-1?"1px dashed rgba(139,105,20,0.1)":"none" }}>
-                      {sub.title && <div style={{ fontSize: 18, fontStyle: "italic", fontWeight: 500, color: "#2C2416", marginBottom: 6 }}>{sub.title}</div>}
+                      {sub.title && <div style={{ fontSize: 18, fontStyle: "italic", fontWeight: 500, color: "#2C2416", marginBottom: 4 }}>{sub.title}</div>}
+                      <div style={{ fontSize: 13, color: "#8B6914", marginBottom: 10, fontStyle: "italic", fontWeight: 500 }}>— {sub.author}</div>
                       <div className="rich-content" style={{ fontSize: 15, lineHeight: 1.8, color: "#3D3525", fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}
                         dangerouslySetInnerHTML={{ __html: sub.content }} />
-                      <div style={{ fontSize: 13, color: "#8B6914", marginTop: 10, fontStyle: "italic", fontWeight: 500 }}>— {sub.author}</div>
                     </div>
                   )) : (
                     <div style={{ marginLeft: 50, fontSize: 14, color: "#BDB3A0", fontFamily: "'Crimson Pro', serif", fontStyle: "italic" }}>No submissions yet</div>
