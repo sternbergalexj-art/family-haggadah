@@ -1040,7 +1040,15 @@ export default function App() {
                                   return next;
                                 })}>
                                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                    <span style={{ fontSize: 14, color: "#8B6914", fontWeight: 600, width: 16, display: "inline-block", textAlign: "center" }}>{expandedIds.has(sub.id) ? "−" : "+"}</span>
+                                    <span style={{
+                                      fontSize: 16, color: "#8B6914", fontWeight: 600,
+                                      width: 26, height: 26, borderRadius: "50%",
+                                      border: "1.5px solid #8B6914",
+                                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                      flexShrink: 0, transition: "all .2s",
+                                      background: expandedIds.has(sub.id) ? "#8B6914" : "transparent",
+                                      color: expandedIds.has(sub.id) ? "#fff" : "#8B6914",
+                                    }}>{expandedIds.has(sub.id) ? "−" : "+"}</span>
                                     <span style={{ fontSize: 15, fontWeight: 600 }}>{sub.author}</span>
                                     {sub.title && <span style={{ fontSize: 14, color: "#6B5A3E", fontStyle: "italic" }}>"{sub.title}"</span>}
                                   </div>
