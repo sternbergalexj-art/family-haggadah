@@ -949,6 +949,59 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* Stats */}
+                {submissions.length > 0 && (() => {
+                  const stripHtml = (html) => { const d = document.createElement("div"); d.innerHTML = html; return d.textContent || ""; };
+                  const withLength = submissions.map(s => ({ ...s, plainLength: stripHtml(s.content || "").length }));
+                  const longest = withLength.reduce((a, b) => a.plainLength > b.plainLength ? a : b);
+                  const totalWords = withLength.reduce((sum, s) => sum + stripHtml(s.content || "").split(/\s+/).filter(Boolean).length, 0);
+                  const sectionsWithContent = new Set(submissions.map(s => s.section)).size;
+                  const uniqueAuthors = new Set(submissions.map(s => s.author)).size;
+
+                  // Family comparison (use allSubmissions to always show both)
+                  const ottensoserCount = allSubmissions.filter(s => s.haggadot?.includes("ottensoser")).length;
+                  const siegelCount = allSubmissions.filter(s => s.haggadot?.includes("siegel")).length;
+                  const familyLeader = ottensoserCount === siegelCount ? "Tied!" : ottensoserCount > siegelCount ? "Ottensoser" : "Siegel";
+
+                  // Most popular section
+                  const sectionCounts = {};
+                  submissions.forEach(s => { sectionCounts[s.section] = (sectionCounts[s.section] || 0) + 1; });
+                  const topSectionNum = Object.entries(sectionCounts).sort((a, b) => b[1] - a[1])[0];
+                  const topSection = topSectionNum ? SECTIONS.find(s => s.num === Number(topSectionNum[0])) : null;
+
+                  return (
+                    <div style={{
+                      background: "rgba(139,105,20,0.03)", border: "1px solid rgba(139,105,20,0.08)",
+                      borderRadius: 12, padding: "16px 20px", marginBottom: 24,
+                    }}>
+                      <div style={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#8B6914", fontFamily: "'Crimson Pro', serif", marginBottom: 12 }}>Stats</div>
+                      <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
+                        <div style={{ textAlign: "center" }}>
+                          <div style={{ fontSize: 22, fontWeight: 300, color: "#8B6914" }}>{submissions.length}</div>
+                          <div style={{ fontSize: 10, color: "#9B8E78", fontFamily: "'Crimson Pro', serif", letterSpacing: "0.05em" }}>Submissions</div>
+                        </div>
+                        <div style={{ textAlign: "center" }}>
+                          <div style={{ fontSize: 22, fontWeight: 300, color: "#8B6914" }}>{uniqueAuthors}</div>
+                          <div style={{ fontSize: 10, color: "#9B8E78", fontFamily: "'Crimson Pro', serif", letterSpacing: "0.05em" }}>Contributors</div>
+                        </div>
+                        <div style={{ textAlign: "center" }}>
+                          <div style={{ fontSize: 22, fontWeight: 300, color: "#8B6914" }}>{sectionsWithContent}/{SECTIONS.length}</div>
+                          <div style={{ fontSize: 10, color: "#9B8E78", fontFamily: "'Crimson Pro', serif", letterSpacing: "0.05em" }}>Sections Filled</div>
+                        </div>
+                        <div style={{ textAlign: "center" }}>
+                          <div style={{ fontSize: 22, fontWeight: 300, color: "#8B6914" }}>{totalWords.toLocaleString()}</div>
+                          <div style={{ fontSize: 10, color: "#9B8E78", fontFamily: "'Crimson Pro', serif", letterSpacing: "0.05em" }}>Total Words</div>
+                        </div>
+                      </div>
+                      <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid rgba(139,105,20,0.08)", fontSize: 12, color: "#8B7D66", fontFamily: "'Crimson Pro', serif", display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div>📏 <strong>Longest:</strong> {longest.author} — "{longest.title}" ({longest.plainLength.toLocaleString()} chars)</div>
+                        <div>👨‍👩‍👧‍👦 <strong>Family race:</strong> Ottensoser {ottensoserCount} vs Siegel {siegelCount} — <strong>{familyLeader}{familyLeader !== "Tied!" ? " leads!" : ""}</strong></div>
+                        {topSection && <div>🏆 <strong>Most popular section:</strong> {topSection.icon} {topSection.en} ({topSectionNum[1]} submission{topSectionNum[1] > 1 ? "s" : ""})</div>}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {SECTIONS.map(sec => {
                   const subs = submissions.filter(s => s.section === sec.num)
                     .sort((a,b) => (a.order??a.createdAt??0)-(b.order??b.createdAt??0));
@@ -987,7 +1040,7 @@ export default function App() {
                                   return next;
                                 })}>
                                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                    <span style={{ fontSize: 12, color: "#8B6914", transition: "transform .2s", transform: expandedIds.has(sub.id) ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
+                                    <span style={{ fontSize: 14, color: "#8B6914", fontWeight: 600, width: 16, display: "inline-block", textAlign: "center" }}>{expandedIds.has(sub.id) ? "−" : "+"}</span>
                                     <span style={{ fontSize: 15, fontWeight: 600 }}>{sub.author}</span>
                                     {sub.title && <span style={{ fontSize: 14, color: "#6B5A3E", fontStyle: "italic" }}>"{sub.title}"</span>}
                                   </div>
