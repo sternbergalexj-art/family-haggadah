@@ -348,6 +348,7 @@ export default function App() {
   const [selectedHaggadot, setSelectedHaggadot] = useState([]);
   const [adminFilter, setAdminFilter] = useState("all");
   const [editingId, setEditingId] = useState(null);
+  const [expandedIds, setExpandedIds] = useState(new Set());
   const [editData, setEditData] = useState({});
   const [exporting, setExporting] = useState(false);
   const [pdfSettings, setPdfSettings] = useState(DEFAULT_PDF_SETTINGS);
@@ -979,16 +980,24 @@ export default function App() {
                             </div>
                           ) : (
                             <div>
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                                <div>
-                                  <span style={{ fontSize: 15, fontWeight: 600 }}>{sub.author}</span>
-                                  {sub.title && <span style={{ fontSize: 14, color: "#6B5A3E", fontStyle: "italic", marginLeft: 10 }}>"{sub.title}"</span>}
-                                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, flexWrap: "wrap" }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => setExpandedIds(prev => {
+                                  const next = new Set(prev);
+                                  if (next.has(sub.id)) next.delete(sub.id); else next.add(sub.id);
+                                  return next;
+                                })}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    <span style={{ fontSize: 12, color: "#8B6914", transition: "transform .2s", transform: expandedIds.has(sub.id) ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
+                                    <span style={{ fontSize: 15, fontWeight: 600 }}>{sub.author}</span>
+                                    {sub.title && <span style={{ fontSize: 14, color: "#6B5A3E", fontStyle: "italic" }}>"{sub.title}"</span>}
+                                  </div>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, marginLeft: 20, flexWrap: "wrap" }}>
                                     <span style={{ fontSize: 11, color: "#9B8E78", fontFamily: "'Crimson Pro', serif" }}>{sub.date}</span>
                                     {HAGGADOT.map(h => {
                                       const tagged = sub.haggadot?.includes(h.id);
                                       return (
-                                        <button key={h.id} onClick={async () => {
+                                        <button key={h.id} onClick={async (e) => {
+                                          e.stopPropagation();
                                           const current = sub.haggadot || [];
                                           const next = tagged ? current.filter(x => x !== h.id) : [...current, h.id];
                                           try { await updateSubmission(sub.id, { haggadot: next }); } catch(e) { console.error(e); }
@@ -1002,15 +1011,16 @@ export default function App() {
                                         }}>{h.name.split(" ")[0]}</button>
                                       );
                                     })}
-                                    {sub.fileUrl && (
-                                      <a href={sub.fileUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "#8B6914", fontFamily: "'Crimson Pro', serif", textDecoration: "underline" }}>
-                                        📎 {sub.fileName || "Original file"}
-                                      </a>
-                                    )}
-                                    {sub.fileName && !sub.fileUrl && (
-                                      <span style={{ fontSize: 11, color: "#9B8E78", fontFamily: "'Crimson Pro', serif" }}>
-                                        📎 {sub.fileName} <span style={{ fontSize: 10, color: "#BDB3A0" }}>(uploading...)</span>
-                                      </span>
+                                    {sub.fileName && (
+                                      sub.fileUrl ? (
+                                        <a href={sub.fileUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 11, color: "#8B6914", fontFamily: "'Crimson Pro', serif", textDecoration: "underline" }}>
+                                          📎 {sub.fileName}
+                                        </a>
+                                      ) : sub.fileError ? (
+                                        <span style={{ fontSize: 11, color: "#CC3333", fontFamily: "'Crimson Pro', serif" }}>📎 Upload failed</span>
+                                      ) : (
+                                        <span style={{ fontSize: 11, color: "#9B8E78", fontFamily: "'Crimson Pro', serif" }}>📎 {sub.fileName} <span style={{ color: "#BDB3A0" }}>(uploading...)</span></span>
+                                      )
                                     )}
                                   </div>
                                 </div>
@@ -1022,41 +1032,45 @@ export default function App() {
                                 </div>
                               </div>
 
-                              {/* Attached file banner */}
-                              {sub.fileName && (
-                                <div style={{
-                                  display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
-                                  background: "rgba(139,105,20,0.04)", borderRadius: 8, marginBottom: 10,
-                                  border: "1px solid rgba(139,105,20,0.08)",
-                                }}>
-                                  <span style={{ fontSize: 20 }}>📄</span>
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontSize: 13, fontFamily: "'Crimson Pro', serif", fontWeight: 500, color: "#2C2416", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                      {sub.fileName}
+                              {/* Expanded content */}
+                              {expandedIds.has(sub.id) && (
+                                <div style={{ marginTop: 12, marginLeft: 20, paddingTop: 12, borderTop: "1px solid rgba(139,105,20,0.08)" }}>
+                                  {/* Attached file banner */}
+                                  {sub.fileName && (
+                                    <div style={{
+                                      display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
+                                      background: "rgba(139,105,20,0.04)", borderRadius: 8, marginBottom: 12,
+                                      border: "1px solid rgba(139,105,20,0.08)",
+                                    }}>
+                                      <span style={{ fontSize: 20 }}>📄</span>
+                                      <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontSize: 13, fontFamily: "'Crimson Pro', serif", fontWeight: 500, color: "#2C2416", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                          {sub.fileName}
+                                        </div>
+                                        <div style={{ fontSize: 11, color: "#9B8E78", fontFamily: "'Crimson Pro', serif" }}>
+                                          Original uploaded file
+                                        </div>
+                                      </div>
+                                      {sub.fileUrl ? (
+                                        <a href={sub.fileUrl} target="_blank" rel="noopener noreferrer" style={{
+                                          padding: "6px 14px", borderRadius: 8, background: "#8B6914", color: "#fff",
+                                          fontSize: 12, fontFamily: "'Crimson Pro', serif", fontWeight: 500,
+                                          textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0,
+                                        }}>Download</a>
+                                      ) : sub.fileError ? (
+                                        <span style={{ fontSize: 11, color: "#CC3333", fontFamily: "'Crimson Pro', serif", flexShrink: 0 }}>
+                                          Upload failed: {sub.fileError}
+                                        </span>
+                                      ) : (
+                                        <span style={{ fontSize: 11, color: "#BDB3A0", fontFamily: "'Crimson Pro', serif", flexShrink: 0 }}>Uploading...</span>
+                                      )}
                                     </div>
-                                    <div style={{ fontSize: 11, color: "#9B8E78", fontFamily: "'Crimson Pro', serif" }}>
-                                      Original uploaded file
-                                    </div>
-                                  </div>
-                                  {sub.fileUrl ? (
-                                    <a href={sub.fileUrl} target="_blank" rel="noopener noreferrer" style={{
-                                      padding: "6px 14px", borderRadius: 8, background: "#8B6914", color: "#fff",
-                                      fontSize: 12, fontFamily: "'Crimson Pro', serif", fontWeight: 500,
-                                      textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0,
-                                    }}>Download</a>
-                                  ) : sub.fileError ? (
-                                    <span style={{ fontSize: 11, color: "#CC3333", fontFamily: "'Crimson Pro', serif", flexShrink: 0, maxWidth: 200, textAlign: "right" }}>
-                                      Upload failed: {sub.fileError}
-                                    </span>
-                                  ) : (
-                                    <span style={{ fontSize: 11, color: "#BDB3A0", fontFamily: "'Crimson Pro', serif", flexShrink: 0 }}>Uploading...</span>
                                   )}
+
+                                  <div className="rich-content" style={{ fontSize: 14, lineHeight: 1.65, color: "#4A4030", fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}
+                                    dangerouslySetInnerHTML={{ __html: sub.content }} />
                                 </div>
                               )}
-
-                              <div className="rich-content" style={{ fontSize: 14, lineHeight: 1.65, color: "#4A4030", fontFamily: "'Crimson Pro', serif", fontWeight: 300, maxHeight: 150, overflow: "hidden",
-                                maskImage: "linear-gradient(to bottom, black 70%, transparent)", WebkitMaskImage: "linear-gradient(to bottom, black 70%, transparent)" }}
-                                dangerouslySetInnerHTML={{ __html: sub.content }} />
                             </div>
                           )}
                         </div>
