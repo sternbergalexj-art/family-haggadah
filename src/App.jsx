@@ -172,7 +172,23 @@ function MiniEditor({ content, onChange }) {
 
 function generatePrintHTML(submissions, familyName, year, settings) {
   const s = { ...DEFAULT_PDF_SETTINGS, ...settings };
-  const sectionHTML = SECTIONS.map(sec => {
+
+  // Only include sections that have submissions
+  const activeSections = SECTIONS.filter(sec =>
+    submissions.some(x => x.section === sec.num)
+  );
+
+  // Table of contents
+  const tocHTML = activeSections.map(sec => {
+    const count = submissions.filter(x => x.section === sec.num).length;
+    return `<div class="toc-item">
+      <span class="toc-name">${s.showSectionIcons ? sec.icon + " " : ""}${sec.num > 0 && sec.num < 99 ? sec.num + ". " : ""}${sec.en} <span class="toc-he">${sec.he}</span></span>
+      <span class="toc-dots"></span>
+      <span class="toc-count">${count} submission${count > 1 ? "s" : ""}</span>
+    </div>`;
+  }).join("");
+
+  const sectionHTML = activeSections.map(sec => {
     const subs = submissions.filter(x => x.section === sec.num)
       .sort((a, b) => (a.order ?? a.createdAt ?? 0) - (b.order ?? b.createdAt ?? 0));
     const secImg = s.sectionImages?.[sec.num];
@@ -187,13 +203,13 @@ function generatePrintHTML(submissions, familyName, year, settings) {
             <div class="sec-desc">${sec.desc}</div>
           </div>
         </div>
-        ${subs.length ? subs.map((sub, i) => `
+        ${subs.map((sub, i) => `
           <div class="submission${i < subs.length - 1 ? " with-border" : ""}">
             ${sub.title ? `<div class="sub-title">${sub.title}</div>` : ""}
             <div class="sub-author">— ${sub.author}</div>
             <div class="sub-content">${sub.content}</div>
           </div>
-        `).join("") : `<div class="no-subs">No submissions for this section</div>`}
+        `).join("")}
       </div>
     `;
   }).join("");
@@ -249,6 +265,17 @@ function generatePrintHTML(submissions, familyName, year, settings) {
   .closing-he { font-family: 'Frank Ruhl Libre', serif; font-size: 28px; color: ${s.accentColor}; direction: rtl; }
   .closing-en { font-size: 15px; color: ${s.textColor}88; margin-top: 10px; font-style: italic; }
 
+  /* Table of Contents */
+  .toc { page-break-after: always; padding: 60px 20px; }
+  .toc-title { font-family: ${s.headingFont}; font-size: 28px; font-weight: 400; text-align: center; margin-bottom: 8px; }
+  .toc-subtitle { font-size: 13px; color: ${s.textColor}88; text-align: center; margin-bottom: 36px; }
+  .toc-line { width: 60px; height: 1px; background: ${s.accentColor}; margin: 16px auto 32px; opacity: 0.5; }
+  .toc-item { display: flex; align-items: baseline; gap: 8px; margin-bottom: 14px; font-size: 15px; }
+  .toc-name { white-space: nowrap; font-family: ${s.headingFont}; font-weight: 500; }
+  .toc-he { font-family: 'Frank Ruhl Libre', serif; color: ${s.accentColor}; font-size: 14px; direction: rtl; }
+  .toc-dots { flex: 1; border-bottom: 1px dotted ${s.accentColor}44; margin: 0 4px; min-width: 20px; position: relative; top: -4px; }
+  .toc-count { white-space: nowrap; font-size: 12px; color: ${s.textColor}88; font-family: 'Crimson Pro', serif; }
+
   @media print {
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
@@ -264,6 +291,11 @@ function generatePrintHTML(submissions, familyName, year, settings) {
     <div class="cover-title">The ${familyName} Haggadah</div>
     ${s.coverSubtitle ? `<div class="cover-subtitle">${s.coverSubtitle}</div>` : ""}
     <div class="cover-year">Passover ${year}</div>
+  </div>
+  <div class="toc">
+    <div class="toc-title">Table of Contents</div>
+    <div class="toc-line"></div>
+    ${tocHTML}
   </div>
   ${sectionHTML}
   <div class="closing">
@@ -1174,7 +1206,34 @@ export default function App() {
               <div style={{ fontSize: 16, color: "#8B6914", fontFamily: "'Crimson Pro', serif", fontWeight: 300, fontStyle: "italic" }}>Passover {year}</div>
             </div>
 
-            {SECTIONS.map(sec => {
+            {/* Table of Contents */}
+            {(() => {
+              const activeSecs = SECTIONS.filter(sec => submissions.some(s => s.section === sec.num));
+              return activeSecs.length > 0 && (
+                <div style={{
+                  background: "#FFFCF7", border: "1px solid rgba(139,105,20,0.1)",
+                  borderRadius: 14, padding: "32px 36px", marginBottom: 36,
+                }}>
+                  <h3 style={{ fontSize: 22, fontWeight: 400, textAlign: "center", marginBottom: 4 }}>Table of Contents</h3>
+                  <div style={{ width: 60, height: 1, margin: "12px auto 24px", background: "linear-gradient(90deg, transparent, #C4943D, transparent)" }} />
+                  {activeSecs.map(sec => {
+                    const count = submissions.filter(s => s.section === sec.num).length;
+                    return (
+                      <div key={sec.num} style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 10, fontSize: 15 }}>
+                        <span style={{ whiteSpace: "nowrap", fontWeight: 500 }}>
+                          {sec.icon} {sec.num > 0 && sec.num < 99 ? sec.num + ". " : ""}{sec.en}{" "}
+                          <span style={{ fontFamily: "'Frank Ruhl Libre', serif", color: "#8B6914", fontSize: 14, direction: "rtl" }}>{sec.he}</span>
+                        </span>
+                        <span style={{ flex: 1, borderBottom: "1px dotted rgba(139,105,20,0.2)", minWidth: 20, position: "relative", top: -3 }} />
+                        <span style={{ whiteSpace: "nowrap", fontSize: 12, color: "#9B8E78", fontFamily: "'Crimson Pro', serif" }}>{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            {SECTIONS.filter(sec => submissions.some(s => s.section === sec.num)).map(sec => {
               const subs = submissions.filter(s => s.section === sec.num)
                 .sort((a,b) => (a.order??a.createdAt??0)-(b.order??b.createdAt??0));
               return (
@@ -1189,16 +1248,14 @@ export default function App() {
                       <div style={{ fontSize: 13, color: "#8B7D66", fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}>{sec.desc}</div>
                     </div>
                   </div>
-                  {subs.length > 0 ? subs.map((sub, i) => (
+                  {subs.map((sub, i) => (
                     <div key={sub.id} style={{ marginLeft: 50, marginBottom: i<subs.length-1?20:0, paddingBottom: i<subs.length-1?20:0, borderBottom: i<subs.length-1?"1px dashed rgba(139,105,20,0.1)":"none" }}>
                       {sub.title && <div style={{ fontSize: 18, fontStyle: "italic", fontWeight: 500, color: "#2C2416", marginBottom: 4 }}>{sub.title}</div>}
                       <div style={{ fontSize: 13, color: "#8B6914", marginBottom: 10, fontStyle: "italic", fontWeight: 500 }}>— {sub.author}</div>
                       <div className="rich-content" style={{ fontSize: 15, lineHeight: 1.8, color: "#3D3525", fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}
                         dangerouslySetInnerHTML={{ __html: sub.content }} />
                     </div>
-                  )) : (
-                    <div style={{ marginLeft: 50, fontSize: 14, color: "#BDB3A0", fontFamily: "'Crimson Pro', serif", fontStyle: "italic" }}>No submissions yet</div>
-                  )}
+                  ))}
                 </div>
               );
             })}
