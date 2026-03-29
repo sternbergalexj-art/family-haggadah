@@ -56,6 +56,7 @@ const DEFAULT_PDF_SETTINGS = {
   contentWidth: 680,
   showSectionIcons: true,
   coverSubtitle: "",
+  insertedImages: {},
 };
 
 // ─── Rich Text Editor ───
@@ -182,7 +183,7 @@ function generatePrintHTML(submissions, familyName, year, settings) {
   const tocHTML = activeSections.map(sec => {
     const count = submissions.filter(x => x.section === sec.num).length;
     return `<div class="toc-item">
-      <span class="toc-name">${s.showSectionIcons ? sec.icon + " " : ""}${sec.num > 0 && sec.num < 99 ? sec.num + ". " : ""}${sec.en} <span class="toc-he">${sec.he}</span></span>
+      <span class="toc-name">${s.showSectionIcons ? sec.icon + " " : ""}${sec.en} <span class="toc-he">${sec.he}</span></span>
       <span class="toc-dots"></span>
       <span class="toc-count">${count} submission${count > 1 ? "s" : ""}</span>
     </div>`;
@@ -192,24 +193,28 @@ function generatePrintHTML(submissions, familyName, year, settings) {
     const subs = submissions.filter(x => x.section === sec.num)
       .sort((a, b) => (a.order ?? a.createdAt ?? 0) - (b.order ?? b.createdAt ?? 0));
     const secImg = s.sectionImages?.[sec.num];
+    // Check for inserted images (stored in settings)
+    const insertedImgs = s.insertedImages?.[sec.num] || [];
     return `
       <div class="section" style="page-break-before:always">
-        ${secImg ? `<img src="${secImg}" class="section-img" />` : ""}
+        ${secImg ? `<img src="${secImg}" class="section-img" style="width:100%;max-height:300px;object-fit:cover" />` : ""}
         <div class="section-header">
-          ${s.showSectionIcons ? `<span class="sec-icon">${sec.icon}</span>` : ""}
-          <div>
-            <span class="sec-en">${sec.num > 0 && sec.num < 99 ? sec.num + ". " : ""}${sec.en}</span>
-            <span class="sec-he">${sec.he}</span>
-            <div class="sec-desc">${sec.desc}</div>
-          </div>
+          ${s.showSectionIcons ? `<div class="sec-icon">${sec.icon}</div>` : ""}
+          <div class="sec-label">Section</div>
+          <span class="sec-en">${sec.en}</span>
+          <span class="sec-he">${sec.he}</span>
+          <div class="sec-desc">${sec.desc}</div>
         </div>
-        ${subs.map((sub, i) => `
-          <div class="submission${i < subs.length - 1 ? " with-border" : ""}">
-            ${sub.title ? `<div class="sub-title">${sub.title}</div>` : ""}
-            <div class="sub-author">— ${sub.author}</div>
-            <div class="sub-content">${sub.content}</div>
-          </div>
-        `).join("")}
+        <div class="section-body">
+          ${subs.map((sub, i) => `
+            <div class="submission${i < subs.length - 1 ? " with-border" : ""}">
+              ${sub.title ? `<div class="sub-title">${sub.title}</div>` : ""}
+              <div class="sub-author">— ${sub.author}</div>
+              <div class="sub-content">${sub.content}</div>
+            </div>
+            ${insertedImgs[i] ? `<img src="${insertedImgs[i]}" class="inserted-image" />` : ""}
+          `).join("")}
+        </div>
       </div>
     `;
   }).join("");
@@ -219,65 +224,77 @@ function generatePrintHTML(submissions, familyName, year, settings) {
 <head>
 <meta charset="UTF-8">
 <title>${familyName} Haggadah ${year}</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Frank+Ruhl+Libre:wght@0,300;0,400;0,500;0,700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,300;1,400&family=David+Libre:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Frank+Ruhl+Libre:wght@0,300;0,400;0,500;0,700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,300;1,400&family=David+Libre:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
 <style>
   @page { size: letter; margin: ${s.pageMargin}px; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: ${s.fontFamily}; font-size: ${s.fontSize}px; line-height: ${s.lineHeight}; color: ${s.textColor}; background: ${s.bgColor}; max-width: ${s.contentWidth}px; margin: 0 auto; }
+  body { font-family: ${s.fontFamily}; font-size: ${s.fontSize - 1}px; line-height: ${s.lineHeight}; color: ${s.textColor}; background: ${s.bgColor}; margin: 0 auto; }
 
-  /* Cover */
-  .cover { text-align: center; page-break-after: always; padding: 120px 40px 80px; position: relative; }
-  .cover-border { position: absolute; top: 24px; left: 24px; right: 24px; bottom: 24px; border: 1.5px solid ${s.accentColor}; opacity: 0.4; }
-  .cover-border-inner { position: absolute; top: 30px; left: 30px; right: 30px; bottom: 30px; border: 0.5px solid ${s.accentColor}; opacity: 0.3; }
-  .cover-img { max-width: 300px; max-height: 200px; margin: 0 auto 30px; border-radius: 12px; }
-  .cover-he { font-family: 'Frank Ruhl Libre', serif; font-size: 32px; color: ${s.accentColor}; direction: rtl; margin-bottom: 12px; }
-  .cover-line { width: 80px; height: 1px; background: ${s.accentColor}; margin: 20px auto; opacity: 0.6; }
-  .cover-title { font-family: ${s.headingFont}; font-size: 42px; font-weight: 400; margin-bottom: 8px; }
-  .cover-subtitle { font-size: 16px; color: ${s.accentColor}; font-style: italic; margin-top: 8px; }
-  .cover-year { font-size: 18px; color: ${s.accentColor}; font-style: italic; margin-top: 4px; }
+  /* Cover — full-page editorial */
+  .cover { text-align: center; page-break-after: always; padding: 100px 40px 60px; position: relative; min-height: 90vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .cover-border { position: absolute; top: 20px; left: 20px; right: 20px; bottom: 20px; border: 1px solid ${s.accentColor}66; }
+  .cover-border-inner { position: absolute; top: 26px; left: 26px; right: 26px; bottom: 26px; border: 0.5px solid ${s.accentColor}33; }
+  .cover-img { max-width: 340px; max-height: 240px; margin: 0 auto 40px; border-radius: 0; object-fit: cover; }
+  .cover-label { font-family: 'Crimson Pro', serif; font-size: 11px; letter-spacing: 0.35em; text-transform: uppercase; color: ${s.accentColor}; margin-bottom: 20px; }
+  .cover-he { font-family: 'Frank Ruhl Libre', serif; font-size: 28px; color: ${s.accentColor}88; direction: rtl; margin-bottom: 16px; }
+  .cover-line { width: 50px; height: 1.5px; background: ${s.accentColor}; margin: 24px auto; }
+  .cover-title { font-family: 'Playfair Display', ${s.headingFont}; font-size: 52px; font-weight: 400; margin-bottom: 4px; letter-spacing: -0.02em; line-height: 1.1; }
+  .cover-subtitle { font-size: 14px; color: ${s.accentColor}; font-style: italic; margin-top: 12px; font-family: 'Crimson Pro', serif; }
+  .cover-year { font-size: 12px; color: ${s.textColor}66; font-family: 'Crimson Pro', serif; letter-spacing: 0.2em; text-transform: uppercase; margin-top: 8px; }
 
-  /* Sections */
-  .section { padding: 20px 0; }
-  .section-img { max-width: 100%; max-height: 250px; border-radius: 10px; margin-bottom: 20px; display: block; }
-  .section-header { display: flex; align-items: center; gap: 14px; padding-bottom: 14px; border-bottom: 1px solid ${s.accentColor}33; margin-bottom: 20px; }
-  .sec-icon { font-size: 24px; }
-  .sec-en { font-family: ${s.headingFont}; font-size: ${s.headingSize}px; font-weight: 500; }
-  .sec-he { font-family: 'Frank Ruhl Libre', serif; font-size: ${s.headingSize - 4}px; color: ${s.accentColor}; margin-left: 12px; direction: rtl; }
-  .sec-desc { font-size: 13px; color: ${s.textColor}88; margin-top: 2px; }
+  /* TOC — clean editorial */
+  .toc { page-break-after: always; padding: 60px 40px; max-width: 500px; margin: 0 auto; }
+  .toc-label { font-family: 'Crimson Pro', serif; font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: ${s.accentColor}; text-align: center; margin-bottom: 6px; }
+  .toc-title { font-family: 'Playfair Display', ${s.headingFont}; font-size: 32px; font-weight: 400; text-align: center; margin-bottom: 4px; }
+  .toc-line { width: 40px; height: 1.5px; background: ${s.accentColor}; margin: 20px auto 32px; }
+  .toc-item { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; font-size: 14px; }
+  .toc-name { white-space: nowrap; font-family: 'Playfair Display', ${s.headingFont}; font-weight: 500; font-size: 15px; }
+  .toc-he { font-family: 'Frank Ruhl Libre', serif; color: ${s.accentColor}; font-size: 13px; direction: rtl; }
+  .toc-dots { flex: 1; border-bottom: 1px dotted ${s.accentColor}33; margin: 0 4px; min-width: 20px; position: relative; top: -3px; }
+  .toc-count { white-space: nowrap; font-size: 11px; color: ${s.textColor}66; font-family: 'Crimson Pro', serif; }
+
+  /* Section — magazine two-column */
+  .section { page-break-before: always; padding: 0; }
+  .section-img { width: 100%; max-height: 300px; object-fit: cover; border-radius: 0; margin-bottom: 24px; display: block; }
+  .section-header { text-align: center; padding: 40px 20px 24px; border-bottom: 1px solid ${s.accentColor}22; margin-bottom: 24px; }
+  .sec-label { font-family: 'Crimson Pro', serif; font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: ${s.accentColor}; margin-bottom: 8px; }
+  .sec-icon { font-size: 28px; display: block; margin-bottom: 8px; }
+  .sec-en { font-family: 'Playfair Display', ${s.headingFont}; font-size: ${s.headingSize + 4}px; font-weight: 400; display: block; letter-spacing: -0.01em; }
+  .sec-he { font-family: 'Frank Ruhl Libre', serif; font-size: ${s.headingSize - 4}px; color: ${s.accentColor}; display: block; direction: rtl; margin-top: 4px; }
+  .sec-desc { font-size: 12px; color: ${s.textColor}66; margin-top: 6px; font-style: italic; font-family: 'Crimson Pro', serif; }
+
+  /* Two-column content */
+  .section-body { column-count: 2; column-gap: 36px; column-rule: 1px solid ${s.accentColor}11; }
 
   /* Submissions */
-  .submission { margin-left: 20px; margin-bottom: 16px; padding-bottom: 16px; }
-  .submission.with-border { border-bottom: 1px dashed ${s.accentColor}22; }
-  .sub-title { font-family: ${s.headingFont}; font-size: 19px; font-style: italic; font-weight: 500; margin-bottom: 6px; }
-  .sub-content { line-height: ${s.lineHeight}; }
-  .sub-content p { margin-bottom: 0.5em; }
-  .sub-content h2 { font-family: ${s.headingFont}; font-size: 20px; font-weight: 600; margin: 0.8em 0 0.4em; }
-  .sub-content h3 { font-family: ${s.headingFont}; font-size: 17px; font-weight: 600; margin: 0.6em 0 0.3em; }
-  .sub-content blockquote { border-right: 3px solid ${s.accentColor}; border-left: 3px solid ${s.accentColor}; padding: 8px 20px; margin: 12px 0; background: ${s.accentColor}08; font-style: italic; }
-  .sub-content ul, .sub-content ol { padding-left: 24px; margin: 8px 0; }
-  .sub-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 12px 0; }
-  .sub-content hr { border: none; border-top: 1px solid ${s.accentColor}22; margin: 16px 0; }
-  .sub-author { font-size: 13px; color: ${s.accentColor}; font-style: italic; font-weight: 500; margin-top: 10px; }
-  .no-subs { font-size: 14px; color: #BBB; font-style: italic; margin-left: 20px; }
+  .submission { break-inside: avoid-column; margin-bottom: 20px; padding-bottom: 16px; }
+  .submission.with-border { border-bottom: 0.5px solid ${s.accentColor}22; }
+  .sub-title { font-family: 'Playfair Display', ${s.headingFont}; font-size: 17px; font-style: italic; font-weight: 500; margin-bottom: 3px; line-height: 1.3; }
+  .sub-author { font-size: 11px; color: ${s.accentColor}; font-style: normal; font-weight: 500; margin-bottom: 8px; font-family: 'Crimson Pro', serif; letter-spacing: 0.05em; text-transform: uppercase; }
+  .sub-content { line-height: ${s.lineHeight}; font-size: ${s.fontSize - 1}px; }
+  .sub-content p { margin-bottom: 0.4em; text-align: justify; }
+  .sub-content h2 { font-family: 'Playfair Display', ${s.headingFont}; font-size: 18px; font-weight: 500; margin: 0.8em 0 0.3em; }
+  .sub-content h3 { font-family: 'Playfair Display', ${s.headingFont}; font-size: 16px; font-weight: 500; margin: 0.6em 0 0.2em; }
+  .sub-content blockquote { border-left: 2px solid ${s.accentColor}; padding: 6px 16px; margin: 10px 0; font-style: italic; color: ${s.textColor}99; font-size: ${s.fontSize - 2}px; }
+  .sub-content ul, .sub-content ol { padding-left: 20px; margin: 6px 0; }
+  .sub-content img { max-width: 100%; height: auto; margin: 10px 0; display: block; break-inside: avoid; }
+  .sub-content hr { border: none; border-top: 0.5px solid ${s.accentColor}22; margin: 14px 0; }
+
+  /* Full-width images break out of columns */
+  .inserted-image { column-span: all; width: 100%; max-height: 350px; object-fit: cover; margin: 20px 0; display: block; }
 
   /* Closing */
-  .closing { text-align: center; padding: 100px 40px; page-break-before: always; }
-  .closing-he { font-family: 'Frank Ruhl Libre', serif; font-size: 28px; color: ${s.accentColor}; direction: rtl; }
-  .closing-en { font-size: 15px; color: ${s.textColor}88; margin-top: 10px; font-style: italic; }
-
-  /* Table of Contents */
-  .toc { page-break-after: always; padding: 60px 20px; }
-  .toc-title { font-family: ${s.headingFont}; font-size: 28px; font-weight: 400; text-align: center; margin-bottom: 8px; }
-  .toc-subtitle { font-size: 13px; color: ${s.textColor}88; text-align: center; margin-bottom: 36px; }
-  .toc-line { width: 60px; height: 1px; background: ${s.accentColor}; margin: 16px auto 32px; opacity: 0.5; }
-  .toc-item { display: flex; align-items: baseline; gap: 8px; margin-bottom: 14px; font-size: 15px; }
-  .toc-name { white-space: nowrap; font-family: ${s.headingFont}; font-weight: 500; }
-  .toc-he { font-family: 'Frank Ruhl Libre', serif; color: ${s.accentColor}; font-size: 14px; direction: rtl; }
-  .toc-dots { flex: 1; border-bottom: 1px dotted ${s.accentColor}44; margin: 0 4px; min-width: 20px; position: relative; top: -4px; }
-  .toc-count { white-space: nowrap; font-size: 12px; color: ${s.textColor}88; font-family: 'Crimson Pro', serif; }
+  .closing { text-align: center; padding: 120px 40px; page-break-before: always; }
+  .closing-he { font-family: 'Frank Ruhl Libre', serif; font-size: 24px; color: ${s.accentColor}; direction: rtl; }
+  .closing-en { font-size: 14px; color: ${s.textColor}66; margin-top: 10px; font-style: italic; font-family: 'Crimson Pro', serif; }
+  .closing-sig { font-family: 'Playfair Display', serif; font-size: 16px; color: ${s.textColor}88; margin-top: 20px; }
 
   @media print {
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .section-body { column-count: 2; }
+  }
+  @media screen {
+    body { max-width: 800px; padding: 0 20px; }
   }
 </style>
 </head>
@@ -285,15 +302,17 @@ function generatePrintHTML(submissions, familyName, year, settings) {
   <div class="cover">
     <div class="cover-border"></div>
     <div class="cover-border-inner"></div>
+    <div class="cover-label">Passover ${year}</div>
     ${s.coverImage ? `<img src="${s.coverImage}" class="cover-img" />` : ""}
     <div class="cover-he">הַגָּדָה שֶׁל פֶּסַח</div>
     <div class="cover-line"></div>
-    <div class="cover-title">The ${familyName} Haggadah</div>
+    <div class="cover-title">The ${familyName}<br>Haggadah</div>
     ${s.coverSubtitle ? `<div class="cover-subtitle">${s.coverSubtitle}</div>` : ""}
-    <div class="cover-year">Passover ${year}</div>
+    <div class="cover-year">A Collection of Family Torah</div>
   </div>
   <div class="toc">
-    <div class="toc-title">Table of Contents</div>
+    <div class="toc-label">In This Haggadah</div>
+    <div class="toc-title">Contents</div>
     <div class="toc-line"></div>
     ${tocHTML}
   </div>
@@ -302,6 +321,7 @@ function generatePrintHTML(submissions, familyName, year, settings) {
     <div class="cover-line" style="margin-bottom:30px"></div>
     <div class="closing-he">לְשָׁנָה הַבָּאָה בִּירוּשָׁלָיִם</div>
     <div class="closing-en">Next year in Jerusalem</div>
+    <div class="closing-sig">— Anna & Harry</div>
   </div>
 </body>
 </html>`;
@@ -1221,7 +1241,7 @@ export default function App() {
                     return (
                       <div key={sec.num} style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 10, fontSize: 15 }}>
                         <span style={{ whiteSpace: "nowrap", fontWeight: 500 }}>
-                          {sec.icon} {sec.num > 0 && sec.num < 99 ? sec.num + ". " : ""}{sec.en}{" "}
+                          {sec.icon} {sec.en}{" "}
                           <span style={{ fontFamily: "'Frank Ruhl Libre', serif", color: "#8B6914", fontSize: 14, direction: "rtl" }}>{sec.he}</span>
                         </span>
                         <span style={{ flex: 1, borderBottom: "1px dotted rgba(139,105,20,0.2)", minWidth: 20, position: "relative", top: -3 }} />
@@ -1249,11 +1269,53 @@ export default function App() {
                     </div>
                   </div>
                   {subs.map((sub, i) => (
-                    <div key={sub.id} style={{ marginLeft: 50, marginBottom: i<subs.length-1?20:0, paddingBottom: i<subs.length-1?20:0, borderBottom: i<subs.length-1?"1px dashed rgba(139,105,20,0.1)":"none" }}>
-                      {sub.title && <div style={{ fontSize: 18, fontStyle: "italic", fontWeight: 500, color: "#2C2416", marginBottom: 4 }}>{sub.title}</div>}
-                      <div style={{ fontSize: 13, color: "#8B6914", marginBottom: 10, fontStyle: "italic", fontWeight: 500 }}>— {sub.author}</div>
-                      <div className="rich-content" style={{ fontSize: 15, lineHeight: 1.8, color: "#3D3525", fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}
-                        dangerouslySetInnerHTML={{ __html: sub.content }} />
+                    <div key={sub.id}>
+                      <div style={{ marginLeft: 50, marginBottom: i<subs.length-1?20:0, paddingBottom: i<subs.length-1?20:0, borderBottom: i<subs.length-1?"1px dashed rgba(139,105,20,0.1)":"none" }}>
+                        {sub.title && <div style={{ fontSize: 18, fontStyle: "italic", fontWeight: 500, color: "#2C2416", marginBottom: 4 }}>{sub.title}</div>}
+                        <div style={{ fontSize: 13, color: "#8B6914", marginBottom: 10, fontStyle: "italic", fontWeight: 500 }}>— {sub.author}</div>
+                        <div className="rich-content" style={{ fontSize: 15, lineHeight: 1.8, color: "#3D3525", fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}
+                          dangerouslySetInnerHTML={{ __html: sub.content }} />
+                      </div>
+                      {/* Image insertion point */}
+                      <div style={{ margin: "12px 0", textAlign: "center" }}>
+                        {pdfSettings.insertedImages?.[sec.num]?.[i] ? (
+                          <div style={{ position: "relative", display: "inline-block" }}>
+                            <img src={pdfSettings.insertedImages[sec.num][i]} style={{ maxWidth: "100%", maxHeight: 250, borderRadius: 8, display: "block" }} />
+                            <button onClick={() => {
+                              const updated = { ...pdfSettings.insertedImages };
+                              if (updated[sec.num]) { delete updated[sec.num][i]; }
+                              setPdfSettings({ ...pdfSettings, insertedImages: updated });
+                            }} style={{
+                              position: "absolute", top: 6, right: 6, width: 24, height: 24, borderRadius: "50%",
+                              background: "rgba(0,0,0,0.5)", color: "#fff", border: "none", cursor: "pointer",
+                              fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>×</button>
+                          </div>
+                        ) : (
+                          <label style={{
+                            display: "inline-flex", alignItems: "center", gap: 6,
+                            padding: "6px 16px", borderRadius: 20, cursor: "pointer",
+                            border: "1px dashed rgba(139,105,20,0.2)", color: "#BDB3A0",
+                            fontSize: 12, fontFamily: "'Crimson Pro', serif",
+                            transition: "all .2s",
+                          }}>
+                            <span>+ Insert image here</span>
+                            <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const reader = new FileReader();
+                              reader.onload = (ev) => {
+                                const updated = { ...pdfSettings.insertedImages };
+                                if (!updated[sec.num]) updated[sec.num] = {};
+                                updated[sec.num][i] = ev.target.result;
+                                setPdfSettings({ ...pdfSettings, insertedImages: updated });
+                              };
+                              reader.readAsDataURL(file);
+                              e.target.value = "";
+                            }} />
+                          </label>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
