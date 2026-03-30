@@ -267,10 +267,10 @@ function generatePrintHTML(submissions, familyName, year, settings) {
   .section-body { column-count: 2; column-gap: 36px; column-rule: 1px solid ${s.accentColor}11; }
 
   /* Submissions */
-  .submission { break-inside: avoid-column; margin-bottom: 20px; padding-bottom: 16px; }
+  .submission { margin-bottom: 20px; padding-bottom: 16px; }
   .submission.with-border { border-bottom: 0.5px solid ${s.accentColor}22; }
-  .sub-title { font-family: 'Playfair Display', ${s.headingFont}; font-size: 17px; font-style: italic; font-weight: 500; margin-bottom: 3px; line-height: 1.3; }
-  .sub-author { font-size: 11px; color: ${s.accentColor}; font-style: normal; font-weight: 500; margin-bottom: 8px; font-family: 'Crimson Pro', serif; letter-spacing: 0.05em; text-transform: uppercase; }
+  .sub-title { font-family: 'Playfair Display', ${s.headingFont}; font-size: 17px; font-style: italic; font-weight: 500; margin-bottom: 3px; line-height: 1.3; break-after: avoid; }
+  .sub-author { font-size: 11px; color: ${s.accentColor}; font-style: normal; font-weight: 500; margin-bottom: 8px; font-family: 'Crimson Pro', serif; letter-spacing: 0.05em; text-transform: uppercase; break-before: avoid; break-after: avoid; }
   .sub-content { line-height: ${s.lineHeight}; font-size: ${s.fontSize - 1}px; }
   .sub-content p { margin-bottom: 0.4em; text-align: justify; }
   .sub-content h2 { font-family: 'Playfair Display', ${s.headingFont}; font-size: 18px; font-weight: 500; margin: 0.8em 0 0.3em; }
