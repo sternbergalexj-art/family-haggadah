@@ -1326,66 +1326,35 @@ export default function App() {
                       <div style={{ marginLeft: 50, marginBottom: i<subs.length-1?20:0, paddingBottom: i<subs.length-1?20:0, borderBottom: i<subs.length-1?"1px dashed rgba(139,105,20,0.1)":"none" }}>
                         {sub.title && <div style={{ fontSize: 18, fontStyle: "italic", fontWeight: 500, color: "#2C2416", marginBottom: 4 }}>{sub.title}</div>}
                         <div style={{ fontSize: 13, color: "#8B6914", marginBottom: 10, fontStyle: "italic", fontWeight: 500 }}>— {sub.author}</div>
-                        <div className="rich-content" style={{ fontSize: 15, lineHeight: 1.8, color: "#3D3525", fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}
-                          dangerouslySetInnerHTML={{ __html: sub.content }} />
-                      </div>
-                      {/* Image insertion point */}
-                      <div style={{ margin: "12px 0", textAlign: "center" }}>
-                        {pdfSettings.insertedImages?.[sec.num]?.[i]?.src ? (
-                          <div style={{ position: "relative", display: "inline-block", maxWidth: "100%" }}>
-                            <img src={pdfSettings.insertedImages[sec.num][i].src} style={{
-                              maxWidth: pdfSettings.insertedImages[sec.num][i].placement === "full" ? "100%" : "50%",
-                              maxHeight: 250, borderRadius: 6, display: "block",
-                              float: pdfSettings.insertedImages[sec.num][i].placement === "left" ? "left" : pdfSettings.insertedImages[sec.num][i].placement === "right" ? "right" : "none",
-                              margin: pdfSettings.insertedImages[sec.num][i].placement === "left" ? "0 16px 8px 0" : pdfSettings.insertedImages[sec.num][i].placement === "right" ? "0 0 8px 16px" : "0 auto",
-                            }} />
-                            <div style={{ position: "absolute", top: 6, right: 6, display: "flex", gap: 4 }}>
-                              {["left", "full", "right"].map(p => (
-                                <button key={p} onClick={() => {
-                                  const updated = { ...pdfSettings.insertedImages };
-                                  updated[sec.num][i] = { ...updated[sec.num][i], placement: p };
-                                  setPdfSettings({ ...pdfSettings, insertedImages: updated });
-                                }} style={{
-                                  width: 24, height: 24, borderRadius: 4, border: "none", cursor: "pointer",
-                                  background: pdfSettings.insertedImages[sec.num][i].placement === p ? "#8B6914" : "rgba(0,0,0,0.4)",
-                                  color: "#fff", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center",
-                                }}>{p === "left" ? "◧" : p === "right" ? "◨" : "▬"}</button>
-                              ))}
-                              <button onClick={() => {
-                                const updated = { ...pdfSettings.insertedImages };
-                                delete updated[sec.num][i];
-                                setPdfSettings({ ...pdfSettings, insertedImages: updated });
-                              }} style={{
-                                width: 24, height: 24, borderRadius: 4,
-                                background: "rgba(180,50,50,0.7)", color: "#fff", border: "none", cursor: "pointer",
-                                fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center",
-                              }}>×</button>
-                            </div>
-                          </div>
-                        ) : (
+                        
+                        {/* Inline image insertion toolbar */}
+                        <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
                           <label style={{
-                            display: "inline-flex", alignItems: "center", gap: 6,
-                            padding: "6px 16px", borderRadius: 20, cursor: "pointer",
-                            border: "1px dashed rgba(139,105,20,0.2)", color: "#BDB3A0",
-                            fontSize: 12, fontFamily: "'Crimson Pro', serif",
-                            transition: "all .2s",
+                            display: "inline-flex", alignItems: "center", gap: 4,
+                            padding: "4px 12px", borderRadius: 16, cursor: "pointer",
+                            border: "1px dashed rgba(139,105,20,0.25)", color: "#8B6914",
+                            fontSize: 11, fontFamily: "'Crimson Pro', serif", fontWeight: 500,
+                            background: "rgba(139,105,20,0.03)",
                           }}>
-                            <span>+ Insert image</span>
-                            <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
+                            🖼️ Add image to this dvar Torah
+                            <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
                               const file = e.target.files?.[0];
                               if (!file) return;
                               const reader = new FileReader();
-                              reader.onload = (ev) => {
-                                const updated = { ...pdfSettings.insertedImages };
-                                if (!updated[sec.num]) updated[sec.num] = {};
-                                updated[sec.num][i] = { src: ev.target.result, placement: "full" };
-                                setPdfSettings({ ...pdfSettings, insertedImages: updated });
+                              reader.onload = async (ev) => {
+                                const imgTag = `<img src="${ev.target.result}" style="max-width:100%;border-radius:6px;margin:12px 0;display:block" />`;
+                                const newContent = sub.content + imgTag;
+                                try { await updateSubmission(sub.id, { content: newContent }); }
+                                catch (err) { console.error(err); }
                               };
                               reader.readAsDataURL(file);
                               e.target.value = "";
                             }} />
                           </label>
-                        )}
+                        </div>
+
+                        <div className="rich-content" style={{ fontSize: 15, lineHeight: 1.8, color: "#3D3525", fontFamily: "'Crimson Pro', serif", fontWeight: 300 }}
+                          dangerouslySetInnerHTML={{ __html: sub.content }} />
                       </div>
                     </div>
                   ))}
