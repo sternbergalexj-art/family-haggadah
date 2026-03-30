@@ -143,6 +143,7 @@ function RichEditor({ content, onChange, placeholder: ph }) {
 }
 
 function MiniEditor({ content, onChange }) {
+  const imgRef = useRef(null);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3] } }),
@@ -151,18 +152,58 @@ function MiniEditor({ content, onChange }) {
     ],
     content: content || "",
     onUpdate: ({ editor: e }) => onChange(e.getHTML()),
+    editorProps: {
+      handlePaste: (view, event) => {
+        const items = event.clipboardData?.items;
+        if (items) for (const item of items) {
+          if (item.type.startsWith("image/")) {
+            event.preventDefault();
+            const file = item.getAsFile();
+            if (file) { const r = new FileReader(); r.onload = (e) => editor?.chain().focus().setImage({ src: e.target.result }).run(); r.readAsDataURL(file); }
+            return true;
+          }
+        }
+        return false;
+      },
+      handleDrop: (view, event) => {
+        const files = event.dataTransfer?.files;
+        if (files?.length) for (const file of files) {
+          if (file.type.startsWith("image/")) {
+            event.preventDefault();
+            const r = new FileReader(); r.onload = (e) => editor?.chain().focus().setImage({ src: e.target.result }).run(); r.readAsDataURL(file);
+            return true;
+          }
+        }
+        return false;
+      },
+    },
   });
   if (!editor) return null;
-  const B = ({ onClick, active, children }) => (
-    <button onClick={onClick} style={{ padding: "4px 8px", borderRadius: 4, border: "none", cursor: "pointer", fontSize: 12, background: active ? "rgba(139,105,20,0.15)" : "transparent", color: active ? "#8B6914" : "#6B5A3E", lineHeight: 1 }}>{children}</button>
+  const B = ({ onClick, active, children, title: t }) => (
+    <button onClick={onClick} title={t} style={{ padding: "5px 9px", borderRadius: 5, border: "none", cursor: "pointer", fontSize: 12, fontWeight: active ? 700 : 400, background: active ? "rgba(139,105,20,0.15)" : "transparent", color: active ? "#8B6914" : "#6B5A3E", lineHeight: 1, minWidth: 28 }}>{children}</button>
   );
+  const Sep = () => <div style={{ width: 1, height: 16, background: "rgba(139,105,20,0.12)", margin: "0 1px" }} />;
   return (
     <div style={{ border: "1px solid rgba(139,105,20,0.18)", borderRadius: 10, background: "#FFFCF7", overflow: "hidden" }}>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 2, padding: "6px 8px", borderBottom: "1px solid rgba(139,105,20,0.1)", background: "rgba(139,105,20,0.02)" }}>
-        <B onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")}>B</B>
-        <B onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")}><em>I</em></B>
-        <B onClick={() => editor.chain().focus().setTextAlign("left").run()} active={editor.isActive({ textAlign: "left" })}>⇤</B>
-        <B onClick={() => editor.chain().focus().setTextAlign("right").run()} active={editor.isActive({ textAlign: "right" })}>⇥</B>
+      <div style={{ display: "flex", flexWrap: "nowrap", gap: 2, padding: "6px 8px", borderBottom: "1px solid rgba(139,105,20,0.1)", background: "rgba(139,105,20,0.02)", alignItems: "center", overflowX: "auto" }}>
+        <B onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")} title="Bold">B</B>
+        <B onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")} title="Italic"><em>I</em></B>
+        <B onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive("underline")} title="Underline"><u>U</u></B>
+        <Sep />
+        <B onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive("heading", { level: 2 })} title="Heading">H</B>
+        <B onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive("blockquote")} title="Quote">❝</B>
+        <Sep />
+        <B onClick={() => editor.chain().focus().setTextAlign("left").run()} active={editor.isActive({ textAlign: "left" })} title="Left">⇤</B>
+        <B onClick={() => editor.chain().focus().setTextAlign("center").run()} active={editor.isActive({ textAlign: "center" })} title="Center">⇔</B>
+        <B onClick={() => editor.chain().focus().setTextAlign("right").run()} active={editor.isActive({ textAlign: "right" })} title="Right / Hebrew">⇥</B>
+        <Sep />
+        <B onClick={() => imgRef.current?.click()} title="Insert image">🖼️</B>
+        <input type="file" ref={imgRef} accept="image/*" onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) { const r = new FileReader(); r.onload = (ev) => editor?.chain().focus().setImage({ src: ev.target.result }).run(); r.readAsDataURL(file); }
+          e.target.value = "";
+        }} style={{ display: "none" }} />
+        <B onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Divider">―</B>
       </div>
       <EditorContent editor={editor} />
     </div>
