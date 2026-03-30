@@ -212,7 +212,7 @@ function generatePrintHTML(submissions, familyName, year, settings) {
               <div class="sub-author">— ${sub.author}</div>
               <div class="sub-content">${sub.content}</div>
             </div>
-            ${insertedImgs[i] ? `<img src="${insertedImgs[i]}" class="inserted-image" />` : ""}
+            ${insertedImgs[i]?.src ? `<img src="${insertedImgs[i].src}" class="${insertedImgs[i].placement === 'left' ? 'img-wrap-left' : insertedImgs[i].placement === 'right' ? 'img-wrap-right' : 'img-wrap-full'}" />` : ""}
           `).join("")}
         </div>
       </div>
@@ -289,12 +289,24 @@ function generatePrintHTML(submissions, familyName, year, settings) {
   .closing-en { font-size: 14px; color: ${s.textColor}66; margin-top: 10px; font-style: italic; font-family: 'Crimson Pro', serif; }
   .closing-sig { font-family: 'Playfair Display', serif; font-size: 16px; color: ${s.textColor}88; margin-top: 20px; }
 
+  /* Page numbers */
+  @page { @bottom-center { content: counter(page); font-family: 'Crimson Pro', serif; font-size: 10px; color: ${s.textColor}66; } }
+  .cover, .toc { page: no-number; }
+  @page no-number { @bottom-center { content: none; } }
+
+  /* Inline images that wrap with text */
+  .img-wrap-left { float: left; margin: 4px 20px 12px 0; max-width: 45%; border-radius: 4px; }
+  .img-wrap-right { float: right; margin: 4px 0 12px 20px; max-width: 45%; border-radius: 4px; }
+  .img-wrap-full { column-span: all; width: 100%; max-height: 350px; object-fit: cover; margin: 16px 0; display: block; }
+
   @media print {
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .section-body { column-count: 2; }
   }
   @media screen {
     body { max-width: 800px; padding: 0 20px; }
+    /* Screen-only page number footer */
+    .section::after { content: ''; display: block; clear: both; }
   }
 </style>
 </head>
@@ -1278,18 +1290,36 @@ export default function App() {
                       </div>
                       {/* Image insertion point */}
                       <div style={{ margin: "12px 0", textAlign: "center" }}>
-                        {pdfSettings.insertedImages?.[sec.num]?.[i] ? (
-                          <div style={{ position: "relative", display: "inline-block" }}>
-                            <img src={pdfSettings.insertedImages[sec.num][i]} style={{ maxWidth: "100%", maxHeight: 250, borderRadius: 8, display: "block" }} />
-                            <button onClick={() => {
-                              const updated = { ...pdfSettings.insertedImages };
-                              if (updated[sec.num]) { delete updated[sec.num][i]; }
-                              setPdfSettings({ ...pdfSettings, insertedImages: updated });
-                            }} style={{
-                              position: "absolute", top: 6, right: 6, width: 24, height: 24, borderRadius: "50%",
-                              background: "rgba(0,0,0,0.5)", color: "#fff", border: "none", cursor: "pointer",
-                              fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center",
-                            }}>×</button>
+                        {pdfSettings.insertedImages?.[sec.num]?.[i]?.src ? (
+                          <div style={{ position: "relative", display: "inline-block", maxWidth: "100%" }}>
+                            <img src={pdfSettings.insertedImages[sec.num][i].src} style={{
+                              maxWidth: pdfSettings.insertedImages[sec.num][i].placement === "full" ? "100%" : "50%",
+                              maxHeight: 250, borderRadius: 6, display: "block",
+                              float: pdfSettings.insertedImages[sec.num][i].placement === "left" ? "left" : pdfSettings.insertedImages[sec.num][i].placement === "right" ? "right" : "none",
+                              margin: pdfSettings.insertedImages[sec.num][i].placement === "left" ? "0 16px 8px 0" : pdfSettings.insertedImages[sec.num][i].placement === "right" ? "0 0 8px 16px" : "0 auto",
+                            }} />
+                            <div style={{ position: "absolute", top: 6, right: 6, display: "flex", gap: 4 }}>
+                              {["left", "full", "right"].map(p => (
+                                <button key={p} onClick={() => {
+                                  const updated = { ...pdfSettings.insertedImages };
+                                  updated[sec.num][i] = { ...updated[sec.num][i], placement: p };
+                                  setPdfSettings({ ...pdfSettings, insertedImages: updated });
+                                }} style={{
+                                  width: 24, height: 24, borderRadius: 4, border: "none", cursor: "pointer",
+                                  background: pdfSettings.insertedImages[sec.num][i].placement === p ? "#8B6914" : "rgba(0,0,0,0.4)",
+                                  color: "#fff", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center",
+                                }}>{p === "left" ? "◧" : p === "right" ? "◨" : "▬"}</button>
+                              ))}
+                              <button onClick={() => {
+                                const updated = { ...pdfSettings.insertedImages };
+                                delete updated[sec.num][i];
+                                setPdfSettings({ ...pdfSettings, insertedImages: updated });
+                              }} style={{
+                                width: 24, height: 24, borderRadius: 4,
+                                background: "rgba(180,50,50,0.7)", color: "#fff", border: "none", cursor: "pointer",
+                                fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center",
+                              }}>×</button>
+                            </div>
                           </div>
                         ) : (
                           <label style={{
@@ -1299,7 +1329,7 @@ export default function App() {
                             fontSize: 12, fontFamily: "'Crimson Pro', serif",
                             transition: "all .2s",
                           }}>
-                            <span>+ Insert image here</span>
+                            <span>+ Insert image</span>
                             <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (!file) return;
@@ -1307,7 +1337,7 @@ export default function App() {
                               reader.onload = (ev) => {
                                 const updated = { ...pdfSettings.insertedImages };
                                 if (!updated[sec.num]) updated[sec.num] = {};
-                                updated[sec.num][i] = ev.target.result;
+                                updated[sec.num][i] = { src: ev.target.result, placement: "full" };
                                 setPdfSettings({ ...pdfSettings, insertedImages: updated });
                               };
                               reader.readAsDataURL(file);
