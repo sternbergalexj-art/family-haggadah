@@ -34,8 +34,8 @@ const SECTIONS = [
 ];
 
 const HAGGADOT = [
-  { id: "ottensoser", name: "Ottensoser Family" },
-  { id: "siegel", name: "Siegel Family" },
+  { id: "ottensoser", name: "Ottensoser Family Haggadah Companion" },
+  { id: "siegel", name: "Siegel Family Haggadah Companion" },
 ];
 
 const ADMIN_PASSWORD = "seder";
@@ -359,7 +359,7 @@ function generatePrintHTML(submissions, familyName, year, settings) {
     ${s.coverImage ? `<img src="${s.coverImage}" class="cover-img" />` : ""}
     <div class="cover-he">הַגָּדָה שֶׁל פֶּסַח</div>
     <div class="cover-line"></div>
-    <div class="cover-title">The ${familyName}<br>Haggadah</div>
+    <div class="cover-title">${familyName}</div>
     ${s.coverSubtitle ? `<div class="cover-subtitle">${s.coverSubtitle}</div>` : ""}
     <div class="cover-year">A Collection of Family Torah</div>
   </div>
@@ -798,7 +798,7 @@ export default function App() {
                             boxShadow: isSel ? "0 2px 12px rgba(44,36,22,0.15)" : "0 1px 4px rgba(139,105,20,0.08)",
                             border: isSel ? "1px solid #2C2416" : "1px solid rgba(139,105,20,0.15)",
                             whiteSpace: "nowrap",
-                          }}>{h.name}</button>
+                          }}>{h.id === "both" ? "Both" : h.name.split(" ")[0]}</button>
                         );
                       })}
                     </div>
@@ -1274,7 +1274,7 @@ export default function App() {
               <div style={{ fontSize: 38, color: "#8B6914", fontFamily: "'Frank Ruhl Libre', serif", marginBottom: 8, direction: "rtl" }}>הַגָּדָה שֶׁל פֶּסַח</div>
               <div style={{ width: 80, height: 1, margin: "16px auto", background: "linear-gradient(90deg, transparent, #C4943D, transparent)" }} />
               <h1 style={{ fontSize: 36, fontWeight: 400, marginBottom: 4 }}>
-                {adminFilter === "all" ? "Family" : adminFilter === "ottensoser" ? "Ottensoser" : "Siegel"} Haggadah
+                {adminFilter === "all" ? "Family Haggadah" : HAGGADOT.find(h => h.id === adminFilter)?.name || "Haggadah"}
               </h1>
               <div style={{ fontSize: 16, color: "#8B6914", fontFamily: "'Crimson Pro', serif", fontWeight: 300, fontStyle: "italic" }}>Passover {year}</div>
             </div>
